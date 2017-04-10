@@ -21,12 +21,16 @@ class ColorDetector {
 
 ColorDetector::ColorDetector(std::string Afile, std::string bfile, std::string eqfile, size_t colorCnt) {
 	A = readBitset(Afile);
+//	std::cout<<A<<"\n";
 	b = readRSBitset(bfile);	
+//	boost::dynamic_bitset<> alaki = readBitset(bfile);
+//	std::cout<<alaki<<"\n";
 	eqT = readBitset(eqfile);
 	this->colorCnt = colorCnt;
 }
 
 bool ColorDetector::contains(unsigned int color, uint64 edge) {
+	edge++;
 	uint64 start = b->select(edge);
 	uint64 end = b->select(edge+1);//todo: what if it is edge is the last one?
 	size_t colorSize = eqT.size()/colorCnt;
@@ -37,7 +41,7 @@ bool ColorDetector::contains(unsigned int color, uint64 edge) {
 		colorIdx |= (A[ctr] << shifter++);
 	}
 	//assumption: color i comes in position i in the original bv_color data structure
-	return A[colorSize+colorIdx + color];
+	return eqT[colorSize*colorIdx + color];
 }
 
 boost::dynamic_bitset<> ColorDetector::readBitset(std::string infileName){
@@ -114,33 +118,13 @@ bool writeBitset(boost::dynamic_bitset<>& bs, std::string outfileName) {
 
 int main(int, char*[]) {
 	ColorDetector* cd = new ColorDetector("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
-	std::cout<<"c0, e20: "<<cd->contains(0, 20)<<std::endl;
-	std::cout<<"c1, e20: "<<cd->contains(1, 20)<<std::endl;
-	std::cout<<"c2, e20: "<<cd->contains(2, 20)<<std::endl;
-	std::cout<<"c3, e20: "<<cd->contains(3, 20)<<std::endl;
-	std::cout<<"c4, e20: "<<cd->contains(4, 20)<<std::endl;
-	std::cout<<"c5, e20: "<<cd->contains(5, 20)<<std::endl;
-	std::cout<<"c6, e20: "<<cd->contains(6, 20)<<std::endl;
+	for (short i = 0; i < 100; i++) {
+		std::cout<<"\ne"+std::to_string(i)<<":\n";
+		for (short j = 0; j < 6; j++) {
+			auto res = cd->contains(j, i);
+			std::cout<<res<<" ";
+		}		
+	}
+ 	return EXIT_SUCCESS;
 }
-/*int main(int, char*[]) {
-  boost::dynamic_bitset<> x(120); // all 0's by default
-  x[8] = 1;
-  x[15] = 1;
-  x[119] = 1;
-  x[115] = 1;
-  std::cout << "Original bitset: " << x << "\n";
-  if (writeBitset(x, "test.bs")) std::cout<<"Successfully written.\n";
-  
-  // test readBitset to boost::dynamic_bitset
-  boost::dynamic_bitset<> b = readBitset("test.bs");
-  std::cout<<"After serializing & deserializing: "<<b<<"\n";
-  
-  // test readBitset to uint64*
-  BitmapPoppy* bitmap = readRSBitset("test.bs");
-  std::cout<<bitmap->select(1)<<"\n";
-  std::cout<<bitmap->select(2)<<"\n";
-  std::cout<<bitmap->select(3)<<"\n";
-  std::cout<<bitmap->select(4)<<"\n";
-  return EXIT_SUCCESS;
-}*/
 
