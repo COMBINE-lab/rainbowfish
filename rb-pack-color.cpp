@@ -67,20 +67,21 @@ void deserialize_color_bv(std::ifstream &colorfile, color_bv &value)
 }
 int insertColorLabel(boost::dynamic_bitset<>& bs, unsigned num, int pos) {
 	// most significant bit of number goes down to the end of the bitset
-	while(num) {
+    do {
     	if (num&1) {
 	      bs.set(pos);
     	}
-	    num>>=1;  
+	num>>=1;  
     	pos++;
-    }
-	return pos;
+    } while(num);
+    return pos;
 }
 
 bool writeBitset(boost::dynamic_bitset<>& bs, std::ofstream& out) {
   int bitctr{7};
   unsigned char byte{0};
   size_t bs_size = bs.size();
+  std::cout<<bs_size<<"\n";
   out.write(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
   for (size_t i = 0; i < bs.size(); ++i) {
     byte |= (bs[i] << bitctr);
@@ -178,22 +179,25 @@ int main(int argc, char * argv[])
 	for (size_t i=0; i < num_edges; i++) {
 		color_bv value;
 		deserialize_color_bv(colorfile, value);
-		rnk.set(curPos); 
+		rnk.set(curPos);
 		curPos = insertColorLabel(A, eqCls[value], curPos);
 		// if we want to set the end, here we should say b.set(curPos-1);
 	}
 	
 	std::cerr << "\nA, rnk & eq. cls BVs creation time : " << getMilliSpan(sysTime) << " ms\n";
+    std::cout<<"A.bitvec:";
     std::ofstream Aout("A.bitvec", std::ios::out|std::ios::binary);
     if (!writeBitset(A, Aout)) {
        std::cerr << "Oh noes; couldn't write A!\n";
     }
     Aout.close();
+    std::cout<<"B.bitvec:";
     std::ofstream Bout("B.bitvec", std::ios::out|std::ios::binary);
     if (!writeBitset(rnk, Bout)) {
        std::cerr << "Oh noes; couldn't write B!\n";
     }
     Bout.close();
+    std::cout<<"eqTable.bitvec:";
 	std::ofstream eqTableout("eqTable.bitvec", std::ios::out|std::ios::binary);
     if (!writeBitset(eqTable, eqTableout)) {
        std::cerr << "Oh noes; couldn't write eqTable!\n";
