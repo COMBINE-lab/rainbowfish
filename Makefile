@@ -9,6 +9,7 @@ BOOST_PATH=/s/chopin/h/proj/soma/boost_1_54
 
 DEP_PATH=3rd_party_inst
 KMC_PATH=./3rd_party_src/KMC
+RANKSELECT_PATH=./3rd_party_src/rankselect
 INC=-isystem $(DEP_PATH)/include -isystem $(BOOST_PATH)/include
 LIB=-L$(DEP_PATH)/lib -L./ -L$(BOOST_PATH)/lib
 BOOST_FLAGS= -lboost_system -lboost_filesystem
@@ -51,6 +52,7 @@ CPP_FLAGS+=-DVERBOSE
 endif
 
 KMC_OBJS=$(KMC_PATH)/kmc_api/kmc_file.o $(KMC_PATH)/kmc_api/kmer_api.o $(KMC_PATH)/kmc_api/mmer.o
+RANKSELECT_OBJS=$(RANKSELECT_PATH)/bitmap.o
 BUILD_REQS=lut.hpp debug.hpp utility.hpp io.hpp sort.hpp kmer.hpp dummies.hpp debruijn_graph.hpp debruijn_graph_shifted.hpp pack-color.hpp cosmo-color-pd.hpp 
 COLOR_REQS=colored_debruijn_graph.hpp io.hpp debug.hpp
 BINARIES=cosmo-build cosmo-color cosmo-test cosmo-benchmark cosmo-benchmark-varord pack-color cosmo-color-pd cosmo-read-color transpose rb-pack-color rb-query
@@ -87,7 +89,7 @@ rb-pack-color: rb-pack-color.cpp $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
 
 rb-query: rb-query.cpp $(BUILD_REQS) compiler_flags
-	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
+	$(CXX) $(CPP_FLAGS) $(RANKSELECT_OBJS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
 
 cosmo-benchmark: cosmo-benchmark.cpp $(BUILD_REQS) wt_algorithm.hpp debruijn_hypergraph.hpp
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(DEP_FLAGS)
