@@ -2,7 +2,7 @@
 
 ## A succinct data structure to store and query colored DBG.
 
-** Installation Guide **
+**Installation Guide**
 Dependencies:
 1. VARI ( https://github.com/cosmo-team/cosmo/tree/VARI ) and all its dependencies:
 	1. KMC
