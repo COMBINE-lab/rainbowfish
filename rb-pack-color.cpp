@@ -161,7 +161,8 @@ int main(int argc, char * argv[])
     for (const auto& c : eqClsVec) {
 	 	//std::cerr <<"eq cls "<<lbl++<< ": "<<c.first<<" : "<<c.second << "\n";
 		totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
-		eqCls[c.first] = lbl;
+		eqCls[c.first] = lbl++;
+		std::cout<<c.first<<":"<<eqCls[c.first];
 	}
     size_t vecBits = totalBits;
     totalBits *= 2;
@@ -172,13 +173,14 @@ int main(int argc, char * argv[])
 	// A contains eq. class label for each k-mer in bits
 	// b is set in the start position of each k-mer in A
 	int sysTime = getMilliCount();
-        colorfile.seekg(0, colorfile.beg);
+    colorfile.seekg(0, colorfile.beg);
 	boost::dynamic_bitset<> A(vecBits);
 	boost::dynamic_bitset<> rnk(vecBits);
 	int curPos = 0;
 	for (size_t i=0; i < num_edges; i++) {
 		color_bv value;
 		deserialize_color_bv(colorfile, value);
+//		std::cout<<value<<":"<<eqCls[value]<<" ";
 		rnk.set(curPos);
 		curPos = insertColorLabel(A, eqCls[value], curPos);
 		// if we want to set the end, here we should say b.set(curPos-1);
