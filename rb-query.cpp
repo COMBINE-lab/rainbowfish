@@ -98,7 +98,7 @@ bool writeBitset(boost::dynamic_bitset<>& bs, std::string outfileName) {
   return true;
 }
 
-int main(int, char*[]) {
+/*int main(int, char*[]) {
 	ColorDetector* cd = new ColorDetector("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
 	std::ofstream f{"ours.res"};
 	size_t num_colors = 6;
@@ -112,5 +112,5 @@ int main(int, char*[]) {
 	f.close();
 	return EXIT_SUCCESS;
 	
-}
+}*/
 
