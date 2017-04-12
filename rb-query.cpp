@@ -1,54 +1,30 @@
-#include <iostream>
-#include <fstream>
-#include <boost/dynamic_bitset.hpp>
-#include <math.h>
-
-#include "bitmap.h"
-#include "shared.h"
-
-class ColorDetector {
-	boost::dynamic_bitset<> A;
-	BitmapPoppy* b;
-	boost::dynamic_bitset<> eqT;
-	size_t colorCnt;
-  public:
-	ColorDetector(std::string Afile, std::string bfile, std::string eqfile, size_t colorCnt); // todo: we should keep count of colors or k-mers in top of the file
-	bool contains(unsigned int color, uint64 edge);
-  private:
-	boost::dynamic_bitset<> readBitset(std::string filename);
-	BitmapPoppy* readRSBitset(std::string filename);	
-};
+#include "rb-query.hpp"
 
 ColorDetector::ColorDetector(std::string Afile, std::string bfile, std::string eqfile, size_t colorCnt) {
 	A = readBitset(Afile);
-//	std::cout<<A<<"\n";
 	b = readRSBitset(bfile);	
-//	boost::dynamic_bitset<> alaki = readBitset(bfile);
-//	std::cout<<alaki<<"\n";
 	eqT = readBitset(eqfile);
 	this->colorCnt = colorCnt;
 }
 
-bool ColorDetector::contains(unsigned int color, uint64 edge) {
+bool ColorDetector::contains(unsigned int color, uint64_t edge) {
 	edge++;
-	uint64 start = b->select(edge);
-	uint64 end = b->select(edge+1);//todo: what if it is edge is the last one?
-	size_t colorSize = eqT.size()/colorCnt;
-	uint64 colorIdx = 0;
+	uint64_t start = b->select(edge);
+	uint64_t end = b->select(edge+1);//todo: what if the edge is the last one?
+	uint64_t colorIdx = 0;
 	size_t shifter = 0;
 	//assumption: labels are put in A from least significant digit to most (e.g. label = 4 is put in A in the order 001)
-	for (uint64 ctr = start; ctr < end; ctr++) {
+	for (uint64_t ctr = start; ctr < end; ctr++) {
 		colorIdx |= (A[ctr] << shifter++);
 	}
 	//assumption: color i comes in position i in the original bv_color data structure
-	return eqT[colorSize*colorIdx + color];
+	return eqT[colorCnt*colorIdx + color];
 }
 
 boost::dynamic_bitset<> ColorDetector::readBitset(std::string infileName){
   std::ifstream infile(infileName, std::ios::binary);
   size_t bs_size;
   infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
-  //std::cout<<"size:"<<bs_size<<"\n";
   boost::dynamic_bitset<> bs(bs_size);
   size_t bytes_len = (size_t)ceil(bs_size/8.0);
   std::cout << infileName << " -- # of bytes: " << bytes_len <<std::endl;
@@ -63,7 +39,6 @@ boost::dynamic_bitset<> ColorDetector::readBitset(std::string infileName){
     }
   }
   infile.close(); 
-  //std::cout<<bs<<std::endl;
   return bs;
 }
 
@@ -73,7 +48,7 @@ BitmapPoppy* ColorDetector::readRSBitset(std::string infileName){
 	infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
 	size_t byteCnt = ceil(bs_size/8.0);
     std::cout << infileName << " -- # of bytes: " << byteCnt <<std::endl;
-	uint64* bitsInUint = new uint64[(int)ceil(bs_size/64.0)];
+	uint64_t* bitsInUint = new uint64_t[(int)ceil(bs_size/64.0)];
 	//infile.read(reinterpret_cast<char*>(bitsInUint), byteCnt);
 	//todo: resolve the case when byteCnt = 0 in a clean way
 	// we have at least one byte in the file
@@ -81,13 +56,17 @@ BitmapPoppy* ColorDetector::readRSBitset(std::string infileName){
 	size_t byteCtr = 0;
 	size_t uintCtr = 0;
 	do {
-		size_t readBytes = byteCnt-byteCtr > 8? 8:byteCnt-byteCtr; // either read 8 bytes (uint64) or if it is the end of the file, the remaining bytes.
+		// either read 8 bytes (uint64_t) or if it is the end of the file, the remaining bytes.
+		size_t readBytes = byteCnt-byteCtr > 8? 8:byteCnt-byteCtr; 		
 		bytes = new unsigned char[readBytes];
 		infile.read(reinterpret_cast<char*>(bytes), readBytes);
 		unsigned char convertedBytes[8];
-		for (size_t i = 0; i < readBytes; i++) convertedBytes[7-i] = bytes[i]; // flip byte positions in the desired way!!!
-		bitsInUint[uintCtr++] = *((uint64*)convertedBytes); // create a uint64 out of array of 8 bytes and put it in the result array
-		byteCtr += readBytes; // move the counter to the first unread byte in file		
+		// flip byte positions in the desired way!!!
+		for (size_t i = 0; i < readBytes; i++) convertedBytes[7-i] = bytes[i];
+		// create a uint64_t out of array of 8 bytes and put it in the result array
+		bitsInUint[uintCtr++] = *((uint64_t*)convertedBytes);
+ 		// move the counter to the first unread byte in file
+		byteCtr += readBytes;		
 	} while(byteCtr < byteCnt);
 	infile.close();
 	BitmapPoppy* bitmap = new BitmapPoppy(bitsInUint, bs_size);
@@ -100,7 +79,6 @@ bool writeBitset(boost::dynamic_bitset<>& bs, std::string outfileName) {
   unsigned char byte{0};
   size_t bs_size = bs.size();
   out.write(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
-  //std::cout<<"size:"<<bs_size<<"\n";
   for (size_t i = 0; i < bs.size(); ++i) {
     bitctr--;
     byte |= (bs[i] << bitctr);
@@ -118,13 +96,17 @@ bool writeBitset(boost::dynamic_bitset<>& bs, std::string outfileName) {
 
 int main(int, char*[]) {
 	ColorDetector* cd = new ColorDetector("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
-	for (short i = 0; i < 100; i++) {
-		std::cout<<"\ne"+std::to_string(i)<<":\n";
-		for (short j = 0; j < 6; j++) {
-			auto res = cd->contains(j, i);
-			std::cout<<res<<" ";
-		}		
+	std::ofstream f{"ours.res"};
+	size_t num_colors = 6;
+	for (int edge = 0; edge < 9254208; edge++) {
+		short our_color_mask = 0;
+		for (size_t c = 0; c < num_colors; c++) {
+			our_color_mask |= (cd->contains(c, edge) << c);
+		}
+		f<<our_color_mask<<std::endl;
 	}
- 	return EXIT_SUCCESS;
+	f.close();
+	return EXIT_SUCCESS;
+	
 }
 
