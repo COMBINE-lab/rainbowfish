@@ -65,7 +65,7 @@ void deserialize_color_bv(std::ifstream &colorfile, color_bv &value)
 {
     colorfile.read((char *)&value, sizeof(color_bv));
 }
-int insertColorLabel(boost::dynamic_bitset<>& bs, unsigned num, int pos) {
+size_t insertColorLabel(boost::dynamic_bitset<>& bs, unsigned num, size_t pos) {
 	// most significant bit of number goes down to the end of the bitset
     do {
     	if (num&1) {
@@ -157,7 +157,7 @@ int main(int argc, char * argv[])
 	std::cout<<"Eq. cls BV:\n"<<eqTable<<"\n";
 	// replacing labels instead of k-mer counts as the hash map values
     int lbl = 0;
-	int totalBits = 0;
+    size_t totalBits = 0;
     for (const auto& c : eqClsVec) {
 	 	//std::cerr <<"eq cls "<<lbl++<< ": "<<c.first<<" : "<<c.second << "\n";
 		totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
@@ -176,7 +176,7 @@ int main(int argc, char * argv[])
     colorfile.seekg(0, colorfile.beg);
 	boost::dynamic_bitset<> A(vecBits);
 	boost::dynamic_bitset<> rnk(vecBits);
-	int curPos = 0;
+	size_t curPos = 0;
 	for (size_t i=0; i < num_edges; i++) {
 		color_bv value;
 		deserialize_color_bv(colorfile, value);
