@@ -21,6 +21,10 @@ bool ColorDetector::contains(unsigned int color, uint64_t edge) {
 	return eqT[colorCnt*colorIdx + color];
 }
 
+size_t ColorDetector::getColorCnt() {
+	return colorCnt;
+}
+
 boost::dynamic_bitset<> ColorDetector::readBitset(std::string infileName){
   std::ifstream infile(infileName, std::ios::binary);
   size_t bs_size;

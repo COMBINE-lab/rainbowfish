@@ -55,7 +55,7 @@ KMC_OBJS=$(KMC_PATH)/kmc_api/kmc_file.o $(KMC_PATH)/kmc_api/kmer_api.o $(KMC_PAT
 RANKSELECT_OBJS=$(RANKSELECT_PATH)/bitmap.o
 BUILD_REQS=lut.hpp debug.hpp utility.hpp io.hpp sort.hpp kmer.hpp dummies.hpp debruijn_graph.hpp debruijn_graph_shifted.hpp pack-color.hpp cosmo-color-pd.hpp 
 COLOR_REQS=colored_debruijn_graph.hpp io.hpp debug.hpp
-BINARIES=cosmo-build cosmo-color cosmo-test cosmo-benchmark cosmo-benchmark-varord pack-color cosmo-color-pd cosmo-read-color transpose rb-pack-color rb-query
+BINARIES=cosmo-build cosmo-color cosmo-test cosmo-benchmark cosmo-benchmark-varord pack-color cosmo-color-pd cosmo-read-color transpose rb-pack-color rb-query rb-bubble
 
 default: all
 
@@ -89,6 +89,9 @@ rb-pack-color: rb-pack-color.cpp $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
 
 rb-query: rb-query.cpp $(BUILD_REQS) compiler_flags
+	$(CXX) $(CPP_FLAGS) $(RANKSELECT_OBJS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
+
+rb-bubble: rb-query.cpp rb-bubble.cpp $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) $(RANKSELECT_OBJS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
 
 cosmo-benchmark: cosmo-benchmark.cpp $(BUILD_REQS) wt_algorithm.hpp debruijn_hypergraph.hpp

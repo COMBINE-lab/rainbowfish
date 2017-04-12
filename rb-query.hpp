@@ -18,6 +18,7 @@ class ColorDetector {
   public:
 	ColorDetector(std::string Afile, std::string bfile, std::string eqfile, size_t colorCnt); // todo: we should keep count of colors or k-mers in top of the file
 	bool contains(unsigned int color, uint64_t edge);
+	size_t getColorCnt();
   private:
 	boost::dynamic_bitset<> readBitset(std::string filename);
 	BitmapPoppy* readRSBitset(std::string filename);	
