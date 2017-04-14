@@ -12,13 +12,13 @@
 #include "io.hpp"
 #include "debruijn_graph_shifted.hpp"
 #include "algorithm.hpp"
-#include "cosmo-color.hpp"
+#include "rb-query.hpp"
+#include "rb-bubble.hpp"
 
 //using namespace std;
 //using namespace sdsl;
 
 #include <sys/timeb.h>
-#include "rb-query.hpp"
 
 int getMilliCount(){
   timeb tb;
@@ -99,10 +99,12 @@ void print_color(color_bv& color)
     cout << "0";
 
 }
-void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector *colors, color_bv color_mask1, color_bv color_mask2)
+
+template <class T>
+void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T>& colors, color_bv color_mask1, color_bv color_mask2)
 {
     int t = getMilliCount();
-    int num_colors = colors->getColorCnt();
+    uint64_t num_colors = colors.getColorCnt();
 
     sdsl::bit_vector visited = sdsl::bit_vector(dbg.num_nodes(), 0);
     cout << "Starting to look for bubbles\n";
@@ -132,8 +134,10 @@ void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector *colors, co
                 branch_labels[branch_num] += base[x];
                 // build color mask
                 color_bv color_mask = 0;
-                for (int c = 0; c < num_colors; c++)
-                    color_mask |= colors->contains(c, edge) << c; //colors[edge * num_colors + c] << c;
+				//if (edge >= 9254208) std::cout<<edge<<":";
+				//std::cout<<edge<<":";
+                for (uint64_t c = 0; c < num_colors; c++)
+                    color_mask |= colors.contains(c, edge) << c; //colors[edge * num_colors + c] << c;
                 branch_color[branch_num] = color_mask;
 
                 // walk along edges until we encounter 
@@ -192,16 +196,16 @@ int main(int argc, char* argv[]) {
   input.close();
   cerr << "loading colors" << std::endl;
   sd_vector<> colors;
-  ColorDetector* cd = new ColorDetector("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
+  ColorDetector<RBVec> cd("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
 
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
   cerr << "num_edges()   : " << dbg.num_edges() << endl;
-  cerr << "colors        : " << colors.size() / dbg.size() << endl; 
+/*  cerr << "colors        : " << colors.size() / dbg.size() << endl; 
   cerr << "Total size    : " << size_in_mega_bytes(dbg) << " MB" << endl;
   cerr << "Bits per edge : " << bits_per_element(dbg) << " Bits" << endl;
   cerr << "Color size    : " << size_in_mega_bytes(colors) << " MB" << endl;
-
+*/
   //dump_nodes(dbg, colors);
   //dump_edges(dbg, colors);
   color_bv mask1 = (p.color_mask1.length() > 0) ? atoi(p.color_mask1.c_str()) : -1;

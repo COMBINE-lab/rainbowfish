@@ -1,20 +1,20 @@
 # NOTE: needs boost, tclap, STXXL, KMC, and sdsl
 
 CXX=g++
-CPP_FLAGS=-pipe -m64 -std=c++14 -pedantic-errors -W -Wall -Wextra -Wpointer-arith \
-					-Wunused -Wwrite-strings #-Wcast-qual #-Werror
+CPP_FLAGS=-pipe -m64 -std=c++14  -W -Wall -Wextra -Wpointer-arith \
+					-Wunused -Wwrite-strings #-pedantic-errors -Wcast-qual #-Werror
 
 CLANG_WARNINGS=-Wbool-conversions -Wshift-overflow -Wliteral-conversion # CLANG ONLY
 BOOST_PATH=/s/chopin/h/proj/soma/boost_1_54
 
 DEP_PATH=3rd_party_inst
 KMC_PATH=./3rd_party_src/KMC
-RANKSELECT_PATH=./3rd_party_src/rankselect
-INC=-isystem $(DEP_PATH)/include -isystem $(BOOST_PATH)/include
+#RANKSELECT_PATH=./3rd_party_inst/include/rankselect
+INC=-isystem $(DEP_PATH)/include -isystem $(BOOST_PATH)/include -isystem $(DEP_PATH)/include/Sux
 LIB=-L$(DEP_PATH)/lib -L./ -L$(BOOST_PATH)/lib
 BOOST_FLAGS= -lboost_system -lboost_filesystem
 DEP_FLAGS=$(INC) $(LIB) $(BOOST_FLAGS) -isystem $(KMC_PATH) -lsdsl -fopenmp #openmp is needed for logging
-DEBUG_FLAGS=-pg -gstabs
+DEBUG_FLAGS=-pg -g -gstabs
 NDEBUG_FLAGS=-DNDEBUG
 OPT_FLAGS=-O3 -mmmx -msse -msse2 -msse3 -msse4 -msse4.2 -march=native -fno-strict-aliasing
 NOPT_FLAGS=-O0
@@ -53,11 +53,12 @@ endif
 
 KMC_OBJS=$(KMC_PATH)/kmc_api/kmc_file.o $(KMC_PATH)/kmc_api/kmer_api.o $(KMC_PATH)/kmc_api/mmer.o
 RANKSELECT_OBJS=$(RANKSELECT_PATH)/bitmap.o
-BUILD_REQS=lut.hpp debug.hpp utility.hpp io.hpp sort.hpp kmer.hpp dummies.hpp debruijn_graph.hpp debruijn_graph_shifted.hpp pack-color.hpp cosmo-color-pd.hpp rb-query.hpp
+BUILD_REQS=lut.hpp debug.hpp utility.hpp io.hpp sort.hpp kmer.hpp dummies.hpp debruijn_graph.hpp debruijn_graph_shifted.hpp pack-color.hpp cosmo-color-pd.hpp
 COLOR_REQS=colored_debruijn_graph.hpp io.hpp debug.hpp
-BINARIES=cosmo-build cosmo-color cosmo-test cosmo-benchmark cosmo-benchmark-varord pack-color cosmo-color-pd cosmo-read-color transpose rb-pack-color rb-bubble
+RB_BUBBLES_SRC=rb-bubble.cpp rb-query.cpp rb-vec.cpp
+RANK9SEL_SRC=$(DEP_PATH)/include/Sux/*.cpp
 
-RB_BUBBLES_SRC=rb-bubble.cpp rb-query.cpp
+BINARIES=cosmo-build cosmo-color cosmo-test cosmo-benchmark cosmo-benchmark-varord pack-color cosmo-color-pd cosmo-read-color transpose rb-pack-color rb-bubble 
 
 default: all
 
@@ -90,11 +91,18 @@ pack-color: pack-color.cpp $(BUILD_REQS) compiler_flags
 rb-pack-color: rb-pack-color.cpp $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
 
-#rb-query: rb-query.cpp $(BUILD_REQS) compiler_flags
-#	$(CXX) $(CPP_FLAGS) $(RANKSELECT_OBJS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
+#rank9sel: $(RANK9SEL_SRC) bit_array.c $(BUILD_REQS) compiler_flags
+#	$(CXX) $(CPP_FLAGS) $(RANK9SEL_SRC) bit_array.c $(DEP_FLAGS) -o $@
 
-rb-bubble: $(RB_BUBBLES_SRC) $(BUILD_REQS) compiler_flags
-	$(CXX) $(CPP_FLAGS) $(RANKSELECT_OBJS) -o $@ $(RB_BUBBLES_SRC) $(KMC_OBJS) $(DEP_FLAGS)
+#rb-query: rb-query.cpp rb-vec.cpp $(RANK9SEL_SRC) $(BUILD_REQS) bit_array.c compiler_flags
+#	$(CXX) $(CPP_FLAGS) -o $@ rb-query.cpp rb-vec.cpp bit_array.c $(RANK9SEL_SRC) $(KMC_OBJS) $(DEP_FLAGS)
+
+#rb-bubble: $(RB_BUBBLES_SRC) $(BUILD_REQS) compiler_flags
+#	$(CXX) $(CPP_FLAGS) $(RB_BUBBLES_SRC) -o$@ $(rank9sel) $(KMC_OBJS) $(DEP_FLAGS)
+
+rb-bubble: $(RB_BUBBLES_SRC) $(RANK9SEL_SRC) bit_array.c $(BUILD_REQS) compiler_flags
+	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ $(RB_BUBBLES_SRC) $(RANK9SEL_SRC) bit_array.c $(KMC_OBJS) $(DEP_FLAGS)
+
 
 cosmo-benchmark: cosmo-benchmark.cpp $(BUILD_REQS) wt_algorithm.hpp debruijn_hypergraph.hpp
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(DEP_FLAGS)
@@ -115,3 +123,6 @@ all: $(BINARIES)
 
 clean:
 		rm -rf $(BINARIES) *.o *.dSYM
+
+
+
