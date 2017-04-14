@@ -35,20 +35,22 @@ size_t ColorDetector<T>::getColorCnt() {
 }
 
 template class ColorDetector<RBVec>;
+template class ColorDetector<RBVecCompressed>;
+
 /*int main(int, char*[]) {
-	ColorDetector<RBVec> cd("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
+	ColorDetector<RBVecCompressed> cd("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
 	std::ofstream f{"ours.res"};
 	size_t num_colors = 6;
-	uint64_t edge_cnt = 9256522;
-	//uint64_t edge_cnt = 12;
-	for (int edge = 0; edge < edge_cnt; edge++) {
+	//uint64_t edge_cnt = 9256522;
+	uint64_t edge_cnt = 12;
+	for (uint64_t edge = 0; edge < edge_cnt; edge++) {
 		short our_color_mask = 0;
-		//std::cout<<edge<<":";
+		std::cout<<edge<<":";
 		for (size_t c = 0; c < num_colors; c++) {
-			//std::cout<<cd.contains(c, edge);
+			std::cout<<cd.contains(c, edge);
 			our_color_mask |= (cd.contains(c, edge) << c);
 		}
-		//std::cout<< " --> "<<our_color_mask<<"\n";
+		std::cout<< " --> "<<our_color_mask<<"\n";
 		f<<our_color_mask<<std::endl;
 	}
 	f.close();

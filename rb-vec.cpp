@@ -77,8 +77,7 @@ rank9sel* RBVec::readRSBitset(std::string infileName){
 
 
 /* Compressed bitvector */
-
-/*RBVecCompressed::RBVecCompressed(std::string fileName, bool hasSelect) {
+RBVecCompressed::RBVecCompressed(std::string fileName, bool hasSelect) {
   std::ifstream infile(fileName, std::ios::binary);
   size_t bs_size;
   infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
@@ -98,5 +97,29 @@ rank9sel* RBVec::readRSBitset(std::string infileName){
   }
   infile.close(); 
   bitvec_ = sdsl::rrr_vector<63>(*bitvec);
+  delete bitvec;
+  if (hasSelect) {
+		  selbitvec_ = sdsl:: rrr_vector<63>::select_1_type(&bitvec_);
+  }
 }
-*/
+
+bool RBVecCompressed::operator[](uint64_t idx) const {
+	return (bool)bitvec_[idx];
+}
+
+//Assume that it is just called when hasSelect is set
+uint64_t RBVecCompressed::select(uint64_t rnk) {
+	//rank starts at 1 in sdsl::rrr_vector::select_1_type so we +1 the input
+	rnk++;
+	return selbitvec_(rnk);
+}
+
+uint64_t RBVecCompressed::getInt(uint64_t offset, uint64_t bitLen) {
+	uint64_t shifter = 0;
+	uint64_t inted = 0;
+	//assumption: labels are put in A from least significant digit to most (e.g. label = 4 is put in A in the order 001)
+	for (uint64_t ctr = 0; ctr < bitLen; ctr++) {
+		inted |= (bitvec_[offset+ctr] << shifter++);
+	}
+	return inted;
+}

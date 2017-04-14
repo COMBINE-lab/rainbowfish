@@ -33,7 +33,7 @@ class RBVecCompressed {
 	private:
 			bool hasSelect;
 			sdsl::rrr_vector<63> bitvec_;
-			//select_support_rrr<> selbitvec;
+			sdsl::rrr_vector<63>::select_1_type selbitvec_;
 	public:
 			RBVecCompressed(std::string fileName, bool hasSelect);
 			bool operator[](uint64_t idx) const;

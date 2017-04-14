@@ -95,7 +95,7 @@ rb-pack-color: rb-pack-color.cpp $(BUILD_REQS) compiler_flags
 #	$(CXX) $(CPP_FLAGS) $(RANK9SEL_SRC) bit_array.c $(DEP_FLAGS) -o $@
 
 #rb-query: rb-query.cpp rb-vec.cpp $(RANK9SEL_SRC) $(BUILD_REQS) bit_array.c compiler_flags
-#	$(CXX) $(CPP_FLAGS) -o $@ rb-query.cpp rb-vec.cpp bit_array.c $(RANK9SEL_SRC) $(KMC_OBJS) $(DEP_FLAGS)
+	#$(CXX) $(CPP_FLAGS) -o $@ rb-query.cpp rb-vec.cpp bit_array.c $(RANK9SEL_SRC) $(KMC_OBJS) $(DEP_FLAGS)
 
 #rb-bubble: $(RB_BUBBLES_SRC) $(BUILD_REQS) compiler_flags
 #	$(CXX) $(CPP_FLAGS) $(RB_BUBBLES_SRC) -o$@ $(rank9sel) $(KMC_OBJS) $(DEP_FLAGS)
