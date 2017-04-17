@@ -196,7 +196,7 @@ int main(int argc, char* argv[]) {
   input.close();
   cerr << "loading colors" << std::endl;
   sd_vector<> colors;
-  ColorDetector<RBVecCompressed> cd("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);
+  ColorDetector<RBVecCompressed> cd("bitvectors/lbl.rrr", "bitvectors/rnk.rrr", "bitvectors/eqTable.rrr", 1000);
 
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;

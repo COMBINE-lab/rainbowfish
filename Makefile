@@ -5,7 +5,7 @@ CPP_FLAGS=-pipe -m64 -std=c++14  -W -Wall -Wextra -Wpointer-arith \
 					-Wunused -Wwrite-strings #-pedantic-errors -Wcast-qual #-Werror
 
 CLANG_WARNINGS=-Wbool-conversions -Wshift-overflow -Wliteral-conversion # CLANG ONLY
-BOOST_PATH=/s/chopin/h/proj/soma/boost_1_54
+BOOST_PATH=/home/rob/cosmo/3rd_party_inst# #/s/chopin/h/proj/soma/boost_1_54
 
 DEP_PATH=3rd_party_inst
 KMC_PATH=./3rd_party_src/KMC
@@ -28,7 +28,7 @@ k?=32
 # TODO: quantize k
 CPP_FLAGS+=-DK_LEN=$(k)
 
-colors?=128
+colors?=6000
 CPP_FLAGS+=-DNUM_COLS=$(colors)
 
 ifeq ($(asm),1)
