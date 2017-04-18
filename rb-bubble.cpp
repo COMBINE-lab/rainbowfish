@@ -39,6 +39,7 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
 {
   TCLAP::CmdLine cmd(BANNER, ' ', VERSION);
   TCLAP::UnlabeledValueArg<std::string> input_filename_arg("input", ".dbg file.", true, "", "graph_file", cmd);
+  TCLAP::UnlabeledValueArg<std::string> color_filename_arg("color", ".rrr file.", true, "", "color_file", cmd);
   string color_mask1 = "color_mask1";
   TCLAP::ValueArg<std::string> color_mask1_arg("a", "color_mask1",
 	    "Color mask 1, color1 [" + color_mask1 + "]", false, "", color_mask1, cmd);
@@ -48,6 +49,7 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   cmd.parse( argc, argv );
 
   params.input_filename  = input_filename_arg.getValue();
+  params.color_filename  = color_filename_arg.getValue();
   params.color_mask1     = color_mask1_arg.getValue();
   params.color_mask2     = color_mask2_arg.getValue();
 }
@@ -188,42 +190,82 @@ int main(int argc, char* argv[]) {
   parameters_t p;
   parse_arguments(argc, argv, p);
   cerr << "pack-color compiled with supported colors=" << NUM_COLS << std::endl;
-  ifstream input(p.input_filename, ios::in|ios::binary|ios::ate);
+  //ifstream input(p.input_filename, ios::in|ios::binary|ios::ate);
    //Can add this to save a couple seconds off traversal - not really worth it.
   cerr << "loading dbg" << std::endl;
   debruijn_graph_shifted<> dbg;
   load_from_file(dbg, p.input_filename);
-  input.close();
+  //input.close();
   cerr << "loading colors" << std::endl;
   sd_vector<> colors;
-  ColorDetector<RBVecCompressed> cd("bitvectors/lbl.rrr", "bitvectors/rnk.rrr", "bitvectors/eqTable.rrr", 1000);
+  load_from_file(colors, p.color_filename);
+  uint64_t num_colors = 1000;
 
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
   cerr << "num_edges()   : " << dbg.num_edges() << endl;
-/*  cerr << "colors        : " << colors.size() / dbg.size() << endl; 
+  //cerr << "colors        : " << colors.size() / dbg.size() << endl; 
   cerr << "Total size    : " << size_in_mega_bytes(dbg) << " MB" << endl;
   cerr << "Bits per edge : " << bits_per_element(dbg) << " Bits" << endl;
-  cerr << "Color size    : " << size_in_mega_bytes(colors) << " MB" << endl;
-*/
+
   //dump_nodes(dbg, colors);
   //dump_edges(dbg, colors);
-  color_bv mask1 = (p.color_mask1.length() > 0) ? atoi(p.color_mask1.c_str()) : -1;
-  color_bv mask2 = (p.color_mask2.length() > 0) ? atoi(p.color_mask2.c_str()) : -1;
-  find_bubbles(dbg, cd, mask1, mask2);
-  /*std::ifstream f{"ours.res"};
- size_t num_colors = 6;
- for (int edge = 0; edge < dbg.num_nodes(); edge++) {
-	short their_color_mask = 0;
-	short our_color_mask = 0;
-	for (size_t c = 0; c < num_colors; c++) {
-		//std::cout<<colors[edge*num_colors+c];
-		their_color_mask |= (colors[edge*num_colors+c] << c);
-	}
-	//std::cout<<"\n";
-	f>>our_color_mask;
-	if (their_color_mask != our_color_mask)
-		std::cout<<edge<<":"<<their_color_mask<<" vs "<<our_color_mask<<"\n"; 
- }
- f.close();*/
+  //color_bv mask1 = (p.color_mask1.length() > 0) ? atoi(p.color_mask1.c_str()) : -1;
+  //color_bv mask2 = (p.color_mask2.length() > 0) ? atoi(p.color_mask2.c_str()) : -1;
+//  ColorDetector<RBVecCompressed> cd("bitvectors", num_colors);
+//  find_bubbles(dbg, cd, mask1, mask2);
+
+  uint64_t startTime = getMilliCount();
+  uint64_t checkPointTime = getMilliCount();
+  uint64_t num_edges = 100000; //dbg.num_edges();
+  ColorDetector<RBVecCompressed> cd("bitvectors", num_colors);
+/*  
+  for (uint64_t edge = 0; edge < num_edges; edge++) {
+	   bool first = true;
+       for (size_t c = 0; c < num_colors; c++) {
+			 if (cd.contains(c, edge) != colors[edge * num_colors + c]) {
+					 if (first) {
+							 std::cout << edge << ":";
+							 first = false;					
+					 }
+					 std::cout << c << " ";
+			 }
+       }
+	   if (!first) std::cout << "\n";
+	   if (edge % 10000 == 0) {
+			   std::cerr << getMilliSpan(checkPointTime)/60000 << " m : " << edge << " out of " << num_edges << " edges were compared.\n";
+			   checkPointTime = getMilliCount();
+	   }
+  }
+  std::cerr << "\n\n" << getMilliSpan(startTime)/60000 << " m : Time for total of " << num_edges * num_colors << " comparisons.\n";
+*/
+  bool temp;
+  uint64_t rainbow_st = getMilliCount();
+  checkPointTime = getMilliCount();
+  for (uint64_t edge = 0; edge < num_edges; edge++) {
+       for (size_t c = 0; c < num_colors; c++) {
+			   temp = cd.contains(c, edge);
+	   }
+	   if (edge % 10000 == 0) {
+			   std::cerr << "rb " << getMilliSpan(checkPointTime) << " ms : " << edge << " of " << num_edges << "\n";
+			   checkPointTime = getMilliCount();
+	   }
+  }
+  rainbow_st = getMilliSpan(rainbow_st);
+
+  uint64_t vari_st = getMilliCount();
+  checkPointTime = getMilliCount();
+  for (uint64_t edge = 0; edge < num_edges; edge++) {
+       for (size_t c = 0; c < num_colors; c++) {
+			   temp = colors[edge*num_colors+c];			   
+	   }
+	   if (edge % 10000 == 0) {
+			   std::cerr << "v " << getMilliSpan(checkPointTime) << " ms : "<< edge << " of " << num_edges <<"\n";
+			   checkPointTime = getMilliCount();
+	   }
+  }
+  vari_st = getMilliSpan(vari_st);
+  std::cerr << "\n\n Total of " << num_edges * num_colors << " comparisons:\n";
+  std::cerr << "		" << rainbow_st/60000 << " m : RAINBOWFISH\n";
+  std::cerr << "		" << vari_st/60000 << " m : VARI\n";
 }

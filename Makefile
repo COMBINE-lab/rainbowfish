@@ -55,8 +55,9 @@ KMC_OBJS=$(KMC_PATH)/kmc_api/kmc_file.o $(KMC_PATH)/kmc_api/kmer_api.o $(KMC_PAT
 RANKSELECT_OBJS=$(RANKSELECT_PATH)/bitmap.o
 BUILD_REQS=lut.hpp debug.hpp utility.hpp io.hpp sort.hpp kmer.hpp dummies.hpp debruijn_graph.hpp debruijn_graph_shifted.hpp pack-color.hpp cosmo-color-pd.hpp
 COLOR_REQS=colored_debruijn_graph.hpp io.hpp debug.hpp
-RB_BUBBLES_SRC=rb-bubble.cpp rb-query.cpp rb-vec.cpp
 RANK9SEL_SRC=$(DEP_PATH)/include/Sux/*.cpp
+RB_VEC_SRC=rb-vec.cpp bit_array.c $(RANK9SEL_SRC)
+RB_QUERY_SRC=rb-query.cpp $(RB_VEC_SRC)
 
 BINARIES=cosmo-build cosmo-color cosmo-test cosmo-benchmark cosmo-benchmark-varord pack-color cosmo-color-pd cosmo-read-color transpose rb-pack-color rb-bubble 
 
@@ -73,7 +74,7 @@ lut.hpp: make_lut.py
 cosmo-build: cosmo-build.cpp $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS) -lstxxl
 
-cosmo-color: cosmo-color.cpp $(BUILD_REQS) compiler_flags
+cosmo-color: cosmo-color.cpp  $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
 
 cosmo-color-pd: cosmo-color-pd.cpp $(BUILD_REQS) compiler_flags
@@ -88,8 +89,8 @@ transpose: transpose.cpp $(BUILD_REQS) compiler_flags
 pack-color: pack-color.cpp $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
 
-rb-pack-color: rb-pack-color.cpp $(BUILD_REQS) compiler_flags
-	$(CXX) $(CPP_FLAGS) -o $@ $< $(KMC_OBJS) $(DEP_FLAGS)
+rb-pack-color: rb-pack-color.cpp $(RB_VEC_SRC) $(BUILD_REQS) compiler_flags
+	$(CXX) $(CPP_FLAGS) rb-pack-color.cpp $(RB_VEC_SRC) -o $@ $(KMC_OBJS) $(DEP_FLAGS)
 
 #rank9sel: $(RANK9SEL_SRC) bit_array.c $(BUILD_REQS) compiler_flags
 #	$(CXX) $(CPP_FLAGS) $(RANK9SEL_SRC) bit_array.c $(DEP_FLAGS) -o $@
@@ -100,8 +101,8 @@ rb-pack-color: rb-pack-color.cpp $(BUILD_REQS) compiler_flags
 #rb-bubble: $(RB_BUBBLES_SRC) $(BUILD_REQS) compiler_flags
 #	$(CXX) $(CPP_FLAGS) $(RB_BUBBLES_SRC) -o$@ $(rank9sel) $(KMC_OBJS) $(DEP_FLAGS)
 
-rb-bubble: $(RB_BUBBLES_SRC) $(RANK9SEL_SRC) bit_array.c $(BUILD_REQS) compiler_flags
-	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ $(RB_BUBBLES_SRC) $(RANK9SEL_SRC) bit_array.c $(KMC_OBJS) $(DEP_FLAGS)
+rb-bubble: rb-bubble.cpp $(RB_QUERY_SRC) $(BUILD_REQS) compiler_flags
+	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ rb-bubble.cpp $(RB_QUERY_SRC) $(KMC_OBJS) $(DEP_FLAGS)
 
 
 cosmo-benchmark: cosmo-benchmark.cpp $(BUILD_REQS) wt_algorithm.hpp debruijn_hypergraph.hpp
