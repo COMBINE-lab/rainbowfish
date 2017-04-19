@@ -8,10 +8,18 @@ ColorDetector<T>::ColorDetector(std::string dir, size_t colorCnt) :
 }
 
 template <class T>
+bool ColorDetector<T>::prevContains_(unsigned int color) {
+	return eqT[colorCnt*prevColor_+ color];
+}
+
+template <class T>
 bool ColorDetector<T>::contains(unsigned int color, uint64_t edge) {
+	if (edge == prevEdge_) { return prevContains_(color); }
 	uint64_t start = b.select(edge);
 	uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
 	uint64_t colorIdx = A.getInt(start, end-start);
+	prevEdge_ = edge;
+	prevColor_ = colorIdx;	
 	return eqT[colorCnt*colorIdx + color];
 }
 
