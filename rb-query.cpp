@@ -5,6 +5,7 @@ template <class T>
 ColorDetector<T>::ColorDetector(std::string dir, size_t colorCnt) :
 		A(dir + "/lbl", false), b(dir + "/rnk", true), eqT(dir + "/eqTable", false) {
 	this->colorCnt = colorCnt;
+	prevEdge_=std::numeric_limits<uint64_t>::max();
 }
 
 template <class T>
@@ -19,7 +20,7 @@ bool ColorDetector<T>::contains(unsigned int color, uint64_t edge) {
 	uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
 	uint64_t colorIdx = A.getInt(start, end-start);
 	prevEdge_ = edge;
-	prevColor_ = colorIdx;	
+	prevColor_ = colorIdx;
 	return eqT[colorCnt*colorIdx + color];
 }
 
