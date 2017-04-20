@@ -3,8 +3,8 @@
 
 RBVec::RBVec(std::string fileName, bool hasSelect) {
 		this->hasSelect = hasSelect;
-		if (!hasSelect) bitvec_ = readBitset(fileName);
-		else selbitvec_ = readRSBitset(fileName);
+		if (!hasSelect) bitvec_ = readBitset(fileName+VEC_EXT);
+		else selbitvec_ = readRSBitset(fileName+VEC_EXT);
 }
 
 RBVec::RBVec(uint64_t bitSize) {
@@ -19,7 +19,7 @@ bool RBVec::operator[](uint64_t idx) const {
 
 //TODO will get so slow if I set if/else for bitvec vs bitselvec
 void RBVec::set(uint64_t idx) {
-	bitvec_.set();
+	bitvec_.set(idx);
 }
 
 // will just return a valid number if hasSelect is true
@@ -44,6 +44,7 @@ bool RBVec::serialize(std::string fileName) {
 	int bitctr{7};
 	unsigned char byte{0};
 	size_t bs_size = bitvec_.size();
+	std::cerr<<fileName<<" -- size "<<bs_size<<"\n";
 	out.write(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
 	for (size_t i = 0; i < bs_size; ++i) {
 		byte |= (bitvec_[i] << bitctr);
@@ -57,17 +58,20 @@ bool RBVec::serialize(std::string fileName) {
 	if (bitctr > 0) {
 		out.write(reinterpret_cast<char*>(&byte), sizeof(byte));
 	}
+	out.close();
 	return true;
 }
 
 boost::dynamic_bitset<> RBVec::readBitset(std::string infileName){
-  std::ifstream infile(infileName+VEC_EXT, std::ios::binary);
+  std::ifstream infile(infileName, std::ios::binary);
   size_t bs_size;
   infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
   boost::dynamic_bitset<> bs(bs_size);
   size_t bytes_len = (size_t)ceil(bs_size/8.0);
-  std::cout << infileName << " -- # of bytes: " << bytes_len <<std::endl;
-  unsigned char bytes[bytes_len] = {0};
+  std::cerr << infileName << " -- size " << bs_size <<std::endl;
+  unsigned char* bytes = new unsigned char[bytes_len];
+ // for (uint64_t i=0; i<bytes_len;i++) bytes[i]=0;
+  std::memset(bytes, 0, sizeof(bytes));
   infile.read(reinterpret_cast<char*>(bytes), bytes_len);
   size_t ctr = 0;
   for (size_t bytectr=0; bytectr < bytes_len; ++bytectr) {
@@ -77,16 +81,17 @@ boost::dynamic_bitset<> RBVec::readBitset(std::string infileName){
       if(ctr == bs_size) {bytectr = bytes_len;break;}
     }
   }
+  std::cerr << "done\n";
   infile.close(); 
   return bs;
 }
 
 rank9sel* RBVec::readRSBitset(std::string infileName) {
-	std::ifstream infile(infileName+VEC_EXT, std::ios::in|std::ios::binary);
+	std::ifstream infile(infileName, std::ios::in|std::ios::binary);
   	size_t bs_size;
 	infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
 	size_t byteCnt = ceil(bs_size/8.0);
-    std::cout << infileName << " -- # of bytes: " << byteCnt <<std::endl;
+    std::cerr << infileName << " -- size  " << bs_size <<std::endl;
     BIT_ARRAY* ba = bit_array_create(bs_size);
 	for (size_t i = 0; i < byteCnt; ++i) {
 		char b;

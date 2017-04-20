@@ -141,7 +141,7 @@ int main(int argc, char * argv[])
 		else
 			eqCls[value] = eqCls[value]+1;
     }
-    std::cerr << getMilliSpan(checkPointTime) << "ms : Succinct builder object allocated" << std::endl;
+    std::cerr << getMilliSpan(checkPointTime) << " ms : Succinct builder object allocated" << std::endl;
 	checkPointTime = getMilliCount();
 	// Put data in hashmap to vector for further probable sorting!!
     std::vector<std::pair<color_bv, int>> eqClsVec;
@@ -171,7 +171,7 @@ int main(int argc, char * argv[])
     totalBits += num_color * eqCls.size();
 	std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
 	
-	ColorPacker<RBVecCompressed> * cp = new ColorPacker<RBVecCompressed>(eqCls.size()*num_color, vecBits);
+	ColorPacker<RBVec> * cp = new ColorPacker<RBVec>(eqCls.size()*num_color, vecBits);
 //	ColorPacker<RBVec> * cp = new ColorPacker<RBVec>(res_dir);
 
 //	if (compress) cp = new ColorPacker<RBVecCompressed>(res_dir);
@@ -190,11 +190,15 @@ int main(int argc, char * argv[])
 
 	// SECOND ROUND going over all edges
 	checkPointTime = getMilliCount();
+	startTime = getMilliCount();
 	// create label & rank vectors
    	colorfile.seekg(0, colorfile.beg);
 	uint64_t curPos = 0;
 	for (size_t i=0; i < num_edges; i++) {
-		//if (i % 1000000 == 0) std::cerr<<i<<std::endl;
+		if (i % 1000000 == 0) {
+				std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<std::endl;
+				checkPointTime = getMilliCount();
+		}
 		color_bv value;
 		deserialize_color_bv(colorfile, value);
 		(cp->rnkvec).set(curPos);
@@ -202,7 +206,7 @@ int main(int argc, char * argv[])
 		// if we want to set the end, here we should say b.set(curPos-1);
 		// TODO if for last edge we need an extra 1 we should have 1 extra bit at the end of the vector and set it here
 	}	
-	std::cerr << getMilliSpan(checkPointTime) << " ms : Packing label & rank into bitvector." << std::endl;
+	std::cerr << getMilliSpan(startTime) << " ms : Packing label & rank into bitvector." << std::endl;
 	
 	checkPointTime = getMilliCount();
 	cp->storeAll(res_dir);

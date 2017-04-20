@@ -217,28 +217,28 @@ int main(int argc, char* argv[]) {
 
   uint64_t startTime = getMilliCount();
   uint64_t checkPointTime = getMilliCount();
-  uint64_t num_edges = 100000; //dbg.num_edges();
-  ColorDetector<RBVecCompressed> cd("bitvectors", num_colors);
-/*  
+  uint64_t num_edges = dbg.num_edges();
+  ColorDetector<RBVec> cd("bitvectors", num_colors);
+
   for (uint64_t edge = 0; edge < num_edges; edge++) {
 	   bool first = true;
-       for (size_t c = 0; c < num_colors; c++) {
+       for (size_t c = 0; c < num_colors; c++) {			 
 			 if (cd.contains(c, edge) != colors[edge * num_colors + c]) {
 					 if (first) {
 							 std::cout << edge << ":";
 							 first = false;					
 					 }
-					 std::cout << c << " ";
+					 std::cout << c << "," << cd.contains(c, edge) << "," << colors[edge*num_colors+c] << " ";
 			 }
        }
 	   if (!first) std::cout << "\n";
 	   if (edge % 10000 == 0) {
-			   std::cerr << getMilliSpan(checkPointTime)/60000 << " m : " << edge << " out of " << num_edges << " edges were compared.\n";
+			   std::cerr << getMilliSpan(checkPointTime) << " ms : " << edge << " out of " << num_edges << " edges were compared.\n";
 			   checkPointTime = getMilliCount();
 	   }
   }
-  std::cerr << "\n\n" << getMilliSpan(startTime)/60000 << " m : Time for total of " << num_edges * num_colors << " comparisons.\n";
-*/
+  std::cerr << "\n\n" << getMilliSpan(startTime) << " ms : Time for total of " << num_edges * num_colors << " comparisons.\n";
+
   bool temp;
   uint64_t rainbow_st = getMilliCount();
   checkPointTime = getMilliCount();
@@ -246,11 +246,12 @@ int main(int argc, char* argv[]) {
        for (size_t c = 0; c < num_colors; c++) {
 			   temp = cd.contains(c, edge);
 	   }
-	   if (edge % 10000 == 0) {
-			   std::cerr << "rb " << getMilliSpan(checkPointTime) << " ms : " << edge << " of " << num_edges << "\n";
-			   checkPointTime = getMilliCount();
-	   }
+//	   if (edge % 100000 == 0) {
+//			   std::cerr << "rb " << getMilliSpan(checkPointTime)/1000 << " s : " << edge << " of " << num_edges << "\n";
+//			   checkPointTime = getMilliCount();
+//	   }
   }
+  std::cerr<<"\n\n\n";
   rainbow_st = getMilliSpan(rainbow_st);
 
   uint64_t vari_st = getMilliCount();
@@ -259,13 +260,14 @@ int main(int argc, char* argv[]) {
        for (size_t c = 0; c < num_colors; c++) {
 			   temp = colors[edge*num_colors+c];			   
 	   }
-	   if (edge % 10000 == 0) {
-			   std::cerr << "v " << getMilliSpan(checkPointTime) << " ms : "<< edge << " of " << num_edges <<"\n";
-			   checkPointTime = getMilliCount();
-	   }
+//	   if (edge % 100000 == 0) {
+//			   std::cerr << "v " << getMilliSpan(checkPointTime)/1000 << " s : "<< edge << " of " << num_edges <<"\n";
+//			   checkPointTime = getMilliCount();
+//	   }
   }
+  std::cerr<<"\n\n\n";
   vari_st = getMilliSpan(vari_st);
   std::cerr << "\n\n Total of " << num_edges * num_colors << " comparisons:\n";
-  std::cerr << "		" << rainbow_st/60000 << " m : RAINBOWFISH\n";
-  std::cerr << "		" << vari_st/60000 << " m : VARI\n";
+  std::cerr << "		" << rainbow_st << " ms : RAINBOWFISH\n";
+  std::cerr << "		" << vari_st << " ms : VARI\n";
 }
