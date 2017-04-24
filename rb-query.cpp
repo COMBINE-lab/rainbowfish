@@ -3,7 +3,7 @@
 
 template <class T>
 ColorDetector<T>::ColorDetector(std::string dir, size_t colorCnt) :
-		A(dir + "/lbl", false), b(dir + "/rnk", true), eqT(dir + "/eqTable", false) {
+		eqT(dir + "/eqTable", false), A(dir + "/lbl", false), b(dir + "/rnk", true) {
 	this->colorCnt = colorCnt;
 	prevEdge_=std::numeric_limits<uint64_t>::max();
 }

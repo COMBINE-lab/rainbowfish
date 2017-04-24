@@ -40,7 +40,8 @@ uint64_t RBVec::getInt(uint64_t offset, uint64_t bitLen) {
 }
 
 bool RBVec::serialize(std::string fileName) {
-	std::ofstream out(fileName+VEC_EXT, std::ios::out | std::ios::binary);
+	fileName = fileName + VEC_EXT;
+	std::ofstream out(fileName, std::ios::out | std::ios::binary);
 	int bitctr{7};
 	unsigned char byte{0};
 	size_t bs_size = bitvec_.size();
@@ -81,7 +82,6 @@ boost::dynamic_bitset<> RBVec::readBitset(std::string infileName){
       if(ctr == bs_size) {bytectr = bytes_len;break;}
     }
   }
-  std::cerr << "done\n";
   infile.close(); 
   return bs;
 }
@@ -111,10 +111,13 @@ rank9sel* RBVec::readRSBitset(std::string infileName) {
 
 // loads a compressed rrr_vector from file
 RBVecCompressed::RBVecCompressed(std::string fileName, bool hasSelect) {
-	sdsl::load_from_file(rrr_bitvec_, fileName+COMPRESSEDVEC_EXT);
+	fileName = fileName+COMPRESSEDVEC_EXT;
+	sdsl::load_from_file(rrr_bitvec_, fileName);
 	if (hasSelect) {
 		selbitvec_ = sdsl:: rrr_vector<63>::select_1_type(&rrr_bitvec_);
 	}
+
+  	std::cerr << fileName << " -- size " << rrr_bitvec_.size() <<std::endl;
 }
 
 // creates an uncompressed bitvector (to be converted to compressed version later)
@@ -154,8 +157,10 @@ uint64_t RBVecCompressed::getInt(uint64_t offset, uint64_t bitLen) {
 
 // compresses bitvector into rrr_vector and serializes it
 bool RBVecCompressed::serialize(std::string fileName) {
+	fileName = fileName+COMPRESSEDVEC_EXT;	
 	sdsl::rrr_vector<63> rrr_bitvec(bitvec_);
-	return sdsl::store_to_file(rrr_bitvec, fileName+COMPRESSEDVEC_EXT);
+  	std::cerr << fileName << " -- size " << rrr_bitvec.size() <<std::endl;
+	return sdsl::store_to_file(rrr_bitvec, fileName);
 }
 
 sdsl::rrr_vector<63> RBVecCompressed::readRSbitset(std::string fileName) {
@@ -164,7 +169,7 @@ sdsl::rrr_vector<63> RBVecCompressed::readRSbitset(std::string fileName) {
   infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
   boost::dynamic_bitset<> bs(bs_size);
   size_t bytes_len = (size_t)ceil(bs_size/8.0);
-  std::cout << fileName << " -- # of bytes: " << bytes_len <<std::endl;
+  std::cerr << fileName << " -- size " << bs_size <<std::endl;
   sdsl::bit_vector bitvec(bs_size);
   unsigned char bytes[bytes_len] = {0};
   infile.read(reinterpret_cast<char*>(bytes), bytes_len);
