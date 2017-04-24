@@ -13,7 +13,7 @@
 #include "debruijn_graph_shifted.hpp"
 #include "algorithm.hpp"
 #include "rb-query.hpp"
-#include "rb-bubble.hpp"
+#include "rb-find-bubble.hpp"
 
 //using namespace std;
 //using namespace sdsl;
@@ -46,12 +46,16 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   string color_mask2 = "color_mask2";
   TCLAP::ValueArg<std::string> color_mask2_arg("b", "color_mask2",
 	    "Color mask 2, color2 [" + color_mask2 + "]", false, "", color_mask2, cmd);
+    TCLAP::UnlabeledValueArg<std::string> res_dir_arg("dir",
+					                                                             "Result directory. Should have created the directory first.", true, "", "res_dir", cmd);
+	
   cmd.parse( argc, argv );
 
   params.input_filename  = input_filename_arg.getValue();
   params.color_filename  = color_filename_arg.getValue();
   params.color_mask1     = color_mask1_arg.getValue();
   params.color_mask2     = color_mask2_arg.getValue();
+  params.res_dir		 = res_dir_arg.getValue();
 }
 
 static char base[] = {'?','A','C','G','T'};
@@ -105,6 +109,8 @@ void print_color(color_bv& color)
 template <class T>
 void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T>& colors, color_bv color_mask1, color_bv color_mask2)
 {
+	uint64_t qt = getMilliCount();
+	uint64_t tqt = 0;
     int t = getMilliCount();
     uint64_t num_colors = colors.getColorCnt();
 
@@ -138,8 +144,10 @@ void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T>& colors,
                 color_bv color_mask = 0;
 				//if (edge >= 9254208) std::cout<<edge<<":";
 				//std::cout<<edge<<":";
+				qt = getMilliCount();
                 for (uint64_t c = 0; c < num_colors; c++)
                     color_mask |= colors.contains(c, edge) << c; //colors[edge * num_colors + c] << c;
+				tqt += getMilliSpan(qt);				
                 branch_color[branch_num] = color_mask;
 
                 // walk along edges until we encounter 
@@ -181,7 +189,7 @@ void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T>& colors,
             }
         }
     }
-    cerr << "Find bubbles time: " << getMilliSpan(t) << std::endl;
+    cerr << "Find bubbles time: " << getMilliSpan(t) << " ms , query time: " << tqt << " ms" << std::endl;
 }
 
 
@@ -195,79 +203,25 @@ int main(int argc, char* argv[]) {
   cerr << "loading dbg" << std::endl;
   debruijn_graph_shifted<> dbg;
   load_from_file(dbg, p.input_filename);
-  //input.close();
   cerr << "loading colors" << std::endl;
-  sd_vector<> colors;
-  load_from_file(colors, p.color_filename);
   uint64_t num_colors = 1000;
 
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
   cerr << "num_edges()   : " << dbg.num_edges() << endl;
-  //cerr << "colors        : " << colors.size() / dbg.size() << endl; 
   cerr << "Total size    : " << size_in_mega_bytes(dbg) << " MB" << endl;
   cerr << "Bits per edge : " << bits_per_element(dbg) << " Bits" << endl;
 
   //dump_nodes(dbg, colors);
   //dump_edges(dbg, colors);
-  //color_bv mask1 = (p.color_mask1.length() > 0) ? atoi(p.color_mask1.c_str()) : -1;
-  //color_bv mask2 = (p.color_mask2.length() > 0) ? atoi(p.color_mask2.c_str()) : -1;
-//  ColorDetector<RBVecCompressed> cd("bitvectors", num_colors);
-//  find_bubbles(dbg, cd, mask1, mask2);
+  color_bv mask1 = (p.color_mask1.length() > 0) ? atoi(p.color_mask1.c_str()) : -1;
+  color_bv mask2 = (p.color_mask2.length() > 0) ? atoi(p.color_mask2.c_str()) : -1;
 
   uint64_t startTime = getMilliCount();
   uint64_t checkPointTime = getMilliCount();
   uint64_t num_edges = dbg.num_edges();
-  ColorDetector<RBVec> cd("bitvectors", num_colors);
+  std::string res_dir = p.res_dir;
+  ColorDetector<RBVecCompressed> cd(res_dir, num_colors);
+  find_bubbles(dbg, cd, mask1, mask2);
 
-  for (uint64_t edge = 0; edge < num_edges; edge++) {
-	   bool first = true;
-       for (size_t c = 0; c < num_colors; c++) {			 
-			 if (cd.contains(c, edge) != colors[edge * num_colors + c]) {
-					 if (first) {
-							 std::cout << edge << ":";
-							 first = false;					
-					 }
-					 std::cout << c << "," << cd.contains(c, edge) << "," << colors[edge*num_colors+c] << " ";
-			 }
-       }
-	   if (!first) std::cout << "\n";
-	   if (edge % 10000 == 0) {
-			   std::cerr << getMilliSpan(checkPointTime) << " ms : " << edge << " out of " << num_edges << " edges were compared.\n";
-			   checkPointTime = getMilliCount();
-	   }
-  }
-  std::cerr << "\n\n" << getMilliSpan(startTime) << " ms : Time for total of " << num_edges * num_colors << " comparisons.\n";
-
-  bool temp;
-  uint64_t rainbow_st = getMilliCount();
-  checkPointTime = getMilliCount();
-  for (uint64_t edge = 0; edge < num_edges; edge++) {
-       for (size_t c = 0; c < num_colors; c++) {
-			   temp = cd.contains(c, edge);
-	   }
-//	   if (edge % 100000 == 0) {
-//			   std::cerr << "rb " << getMilliSpan(checkPointTime)/1000 << " s : " << edge << " of " << num_edges << "\n";
-//			   checkPointTime = getMilliCount();
-//	   }
-  }
-  std::cerr<<"\n\n\n";
-  rainbow_st = getMilliSpan(rainbow_st);
-
-  uint64_t vari_st = getMilliCount();
-  checkPointTime = getMilliCount();
-  for (uint64_t edge = 0; edge < num_edges; edge++) {
-       for (size_t c = 0; c < num_colors; c++) {
-			   temp = colors[edge*num_colors+c];			   
-	   }
-//	   if (edge % 100000 == 0) {
-//			   std::cerr << "v " << getMilliSpan(checkPointTime)/1000 << " s : "<< edge << " of " << num_edges <<"\n";
-//			   checkPointTime = getMilliCount();
-//	   }
-  }
-  std::cerr<<"\n\n\n";
-  vari_st = getMilliSpan(vari_st);
-  std::cerr << "\n\n Total of " << num_edges * num_colors << " comparisons:\n";
-  std::cerr << "		" << rainbow_st << " ms : RAINBOWFISH\n";
-  std::cerr << "		" << vari_st << " ms : VARI\n";
 }

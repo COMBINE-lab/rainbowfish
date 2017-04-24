@@ -7,7 +7,7 @@ struct parameters_t {
   std::string output_prefix = "";
   std::string color_mask1 = "";
   std::string color_mask2 = "";
-
+  std::string res_dir = "";
 };
 
 int getMilliCount();
