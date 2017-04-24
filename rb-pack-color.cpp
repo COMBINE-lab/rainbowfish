@@ -56,11 +56,13 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
                                                              "Input file. Currently only supports DSK's binary format (for k<=64).", true, "", "input_file", cmd);
     TCLAP::UnlabeledValueArg<std::string> num_colors_arg("num_colors",
                                                          "Number of colors", true, "", "num colors", cmd);
+    TCLAP::UnlabeledValueArg<std::string> res_dir_arg("dir",
+                                                             "Result directory. Should have created the directory first.", true, "", "res_dir", cmd);
 	//TCLAP::UnlabeledValueArg<std::string> compress_arg("compress", "say compress if you want the data saved in a compressed format.", false, "", "compress", cmd);
     cmd.parse( argc, argv );
     params.input_filename  = input_filename_arg.getValue();
     params.num_colors  = atoi(num_colors_arg.getValue().c_str());
-		
+	params.res_dir = res_dir_arg.getValue();
 }
 
 void deserialize_color_bv(std::ifstream &colorfile, color_bv &value)
@@ -104,8 +106,7 @@ int main(int argc, char * argv[])
 {
 	bool sort = true;
 	bool compress = true;
-	std::string res_dir = "bitvectors";
-    //std::cerr << "pack-color compiled with supported colors=" << NUM_COLS << std::endl;
+    std::cerr << "pack-color compiled with supported colors=" << NUM_COLS << std::endl;
     std::cerr <<"Starting" << std::endl;
     parameters_t params;
     parse_arguments(argc, argv, params);
@@ -113,6 +114,7 @@ int main(int argc, char * argv[])
     const char * file_name = params.input_filename.c_str();
     std::cerr << "file name: " << file_name << std::endl;
 
+	const char * res_dir = params.res_dir.c_str();//"bitvectors";
 	// Open File
     std::ifstream colorfile(file_name, std::ios::in|std::ios::binary);
 
@@ -130,12 +132,22 @@ int main(int argc, char * argv[])
 	// Read file and fill out equivalence classes
     std::cerr << "edges: " << num_edges << " colors: " << num_color << " Total: " << num_edges * num_color << std::endl;
     sparse_hash_map<color_bv, int> eqCls;
-    for (size_t i=0; i < num_edges; i++) {
+    bool first = true;
+	for (size_t i=0; i < num_edges; i++) {
         if (i % 100000000 == 0) {
             std::cerr << "deserializing edge " << i << std::endl;
         }
         color_bv value;
         deserialize_color_bv(colorfile, value);
+		//std::cerr<<"value.size() : "<< value.size() << "\n";
+		//std::cerr<<i << " : ";
+		//for (int j = 0; j < value.size(); j++ ) 
+		//		if (value[j] && first) {std::cerr<<i<<","<<j<<"\n";first = false;}
+		//if (i == 100)
+		//for (int j =0; j < value.size(); j++) std::cerr<<value[j];
+		//std::cerr<<" ";
+		//for (int j =5000; j < 6000; j++) std::cerr<<value[j];
+		//std::cerr<<"\n";
 		if (eqCls.find(value)==eqCls.end())
 	    	eqCls[value] = 1;
 		else
@@ -159,20 +171,25 @@ int main(int argc, char * argv[])
 	// replacing labels instead of k-mer counts as the hash map values
     int lbl = 0;
     size_t totalBits = 0;
+	uint64_t total_edges = 0;
+	std::cerr<<"Starting from hereeeee\n";
     for (const auto& c : eqClsVec) {
-	 	//std::cerr <<"eq cls "<<lbl++<< ": "<<c.first<<" : "<<c.second << "\n";
+	 	std::cerr <<"eq cls "<<lbl<< ", "<< c.second<<": \n";
+		total_edges += c.second;
+		for (int k=0;k<1000;k++) if (c.first[k] == true) std::cerr<<k<<" ";
+		std::cerr<<"\n";
 		totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
 		//std::cerr << lbl << " : " << c.second << std::endl;
 		eqCls[c.first] = lbl++;
 	}
 	std::cerr << getMilliSpan(checkPointTime) << " ms : (Sorting eq vector and ) assigning a label to each eq class." << std::endl;
+	std::cerr << " Total edge vs total edge: "<<total_edges<<" vs "<< num_edges<<"\n";
     size_t vecBits = totalBits;
     totalBits *= 2;
     totalBits += num_color * eqCls.size();
 	std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
 	
-	ColorPacker<RBVec> * cp = new ColorPacker<RBVec>(eqCls.size()*num_color, vecBits);
-//	ColorPacker<RBVec> * cp = new ColorPacker<RBVec>(res_dir);
+	ColorPacker<RBVecCompressed> * cp = new ColorPacker<RBVecCompressed>(eqCls.size()*num_color, vecBits);
 
 //	if (compress) cp = new ColorPacker<RBVecCompressed>(res_dir);
 //	else cp = new ColorPacker<RBVec>(res_dir);
@@ -195,12 +212,19 @@ int main(int argc, char * argv[])
    	colorfile.seekg(0, colorfile.beg);
 	uint64_t curPos = 0;
 	for (size_t i=0; i < num_edges; i++) {
-		if (i % 1000000 == 0) {
+		if (i % 100000000/*1000000*/ == 0) {
 				std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<std::endl;
 				checkPointTime = getMilliCount();
 		}
 		color_bv value;
 		deserialize_color_bv(colorfile, value);
+		//std::cout<<i <<" class : " << eqCls[value] << "\n";
+	//	std::cout<<value<<"\n";
+		if (i < 100) {
+			//std::cerr<<"pos"<<curPos<<", eq"<<eqCls[value]<<": ";
+			for (int j =0; j < num_color/*value.size()*/; j++) std::cerr<<value[j];
+			std::cerr<<" ";
+		}
 		(cp->rnkvec).set(curPos);
 		curPos = cp->insertColorLabel(eqCls[value], curPos);
 		// if we want to set the end, here we should say b.set(curPos-1);
