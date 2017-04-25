@@ -174,10 +174,10 @@ int main(int argc, char * argv[])
 	uint64_t total_edges = 0;
 	std::cerr<<"Starting from hereeeee\n";
     for (const auto& c : eqClsVec) {
-	 	std::cerr <<"eq cls "<<lbl<< ", "<< c.second<<": \n";
+	 	//std::cerr <<"eq cls "<<lbl<< ", "<< c.second<<": \n";
 		total_edges += c.second;
-		for (int k=0;k<1000;k++) if (c.first[k] == true) std::cerr<<k<<" ";
-		std::cerr<<"\n";
+		//for (int k=0;k<1000;k++) if (c.first[k] == true) std::cerr<<k<<" ";
+		//std::cerr<<"\n";
 		totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
 		//std::cerr << lbl << " : " << c.second << std::endl;
 		eqCls[c.first] = lbl++;
@@ -220,11 +220,11 @@ int main(int argc, char * argv[])
 		deserialize_color_bv(colorfile, value);
 		//std::cout<<i <<" class : " << eqCls[value] << "\n";
 	//	std::cout<<value<<"\n";
-		if (i < 100) {
+		//if (i < 100) {
 			//std::cerr<<"pos"<<curPos<<", eq"<<eqCls[value]<<": ";
-			for (int j =0; j < num_color/*value.size()*/; j++) std::cerr<<value[j];
-			std::cerr<<" ";
-		}
+			//for (int j =0; j < num_color/*value.size()*/; j++) std::cerr<<value[j];
+			//std::cerr<<" ";
+		//}
 		(cp->rnkvec).set(curPos);
 		curPos = cp->insertColorLabel(eqCls[value], curPos);
 		// if we want to set the end, here we should say b.set(curPos-1);
