@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
   cerr << "loading colors" << std::endl;
   sd_vector<> colors;
   load_from_file(colors, p.color_filename);
-  uint64_t num_colors = 1000;
+  uint64_t num_colors = 10;//00;
 
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
@@ -79,7 +79,9 @@ int main(int argc, char* argv[]) {
   uint64_t checkPointTime = getMilliCount();
   uint64_t num_edges = dbg.num_edges();
   std::string res_dir = p.res_dir;
-  ColorDetector<RBVecCompressed> cd(res_dir, num_colors);
+  ColorDetector<RBVecCompressed, RBVecCompressed, RBVecCompressed> cd(res_dir, num_colors);
+  //ColorDetector<RBVec, RBVec, RBVec> cd(res_dir, num_colors);
+  //ColorDetector<RBVec, RBVecCompressed, RBVecCompressed> cd(res_dir, num_colors);
 
   uint64_t rbsum = 0;
   uint64_t cosmosum = 0;
@@ -96,10 +98,10 @@ int main(int argc, char* argv[]) {
 			 if (rb != cosmo) {
 					 allTheSame = false;
 					 if (first) {
-							 std::cout << edge << ":";
+							 std::cout << "rbVSvari e" <<edge << "--> ";
 							 first = false;					
 					 }
-					 std::cerr << c << "," << cd.contains(c, edge) << "," << colors[edge*num_colors+c] << " ";
+					 std::cout << "c"<<c << ":" << cd.contains(c, edge) << "," << colors[edge*num_colors+c] << " ";
 			 }
 			 //if (edge < 100) std::cerr<<cd.contains(c, edge);
        }

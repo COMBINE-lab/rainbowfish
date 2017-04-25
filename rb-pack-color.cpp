@@ -70,12 +70,12 @@ void deserialize_color_bv(std::ifstream &colorfile, color_bv &value)
     colorfile.read((char *)&value, sizeof(color_bv));
 }
 
-template <class T>
+template <class T1, class T2, class T3>
 class ColorPacker {
 	public:
-			T eqTvec;
-			T lblvec;
-			T rnkvec;
+			T1 lblvec;
+			T2 rnkvec;
+			T3 eqTvec;
 	public:
 			ColorPacker(uint64_t eqBitSize, uint64_t lblBitSize) :
 				eqTvec(eqBitSize), lblvec(lblBitSize), rnkvec(lblBitSize) {
@@ -189,7 +189,9 @@ int main(int argc, char * argv[])
     totalBits += num_color * eqCls.size();
 	std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
 	
-	ColorPacker<RBVecCompressed> * cp = new ColorPacker<RBVecCompressed>(eqCls.size()*num_color, vecBits);
+	ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
+	//ColorPacker<RBVec, RBVec, RBVec> * cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
+	//ColorPacker<RBVec, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
 
 //	if (compress) cp = new ColorPacker<RBVecCompressed>(res_dir);
 //	else cp = new ColorPacker<RBVec>(res_dir);

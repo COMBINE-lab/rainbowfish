@@ -16,8 +16,8 @@ void parse_arguments(int argc, char **argv, parameters_t & params);
 void test_symmetry(debruijn_graph_shifted<> dbg);
 void dump_nodes(debruijn_graph_shifted<> dbg, uint64_t * colors);
 void dump_edges(debruijn_graph_shifted<> dbg, uint64_t * colors);
-template <class T>
-void find_bubbles(debruijn_graph<> dbg, ColorDetector<T> &colors, uint64_t color_mask1, uint64_t color_mask2);
+template <class T1, class T2, class T3>
+void find_bubbles(debruijn_graph<> dbg, ColorDetector<T1, T2, T3> &colors, uint64_t color_mask1, uint64_t color_mask2);
 
 
 

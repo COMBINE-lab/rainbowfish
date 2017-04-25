@@ -3,12 +3,12 @@
 
 #include "rb-vec.hpp"
 
-template <class T>
+template <class T1, class T2, class T3>
 class ColorDetector {
   private:
-	T A;
-	T b;
-	T eqT;
+	T1 A;
+	T2 b;
+	T3 eqT;
 	size_t colorCnt;
 	uint64_t prevEdge_;
 	uint64_t prevColor_;

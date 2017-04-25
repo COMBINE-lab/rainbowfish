@@ -1,20 +1,20 @@
 
 #include "rb-query.hpp"
 
-template <class T>
-ColorDetector<T>::ColorDetector(std::string dir, size_t colorCnt) :
+template <class T1, class T2, class T3>
+ColorDetector<T1, T2, T3>::ColorDetector(std::string dir, size_t colorCnt) :
 		eqT(dir + "/eqTable", false), A(dir + "/lbl", false), b(dir + "/rnk", true) {
 	this->colorCnt = colorCnt;
 	prevEdge_=std::numeric_limits<uint64_t>::max();
 }
 
-template <class T>
-bool ColorDetector<T>::prevContains_(unsigned int color) {
+template <class T1, class T2, class T3>
+bool ColorDetector<T1, T2, T3>::prevContains_(unsigned int color) {
 	return eqT[colorCnt*prevColor_+ color];
 }
 
-template <class T>
-bool ColorDetector<T>::contains(unsigned int color, uint64_t edge) {
+template <class T1, class T2, class T3>
+bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	if (edge == prevEdge_) { return prevContains_(color); }
 	uint64_t start = b.select(edge);
 	uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
@@ -24,13 +24,15 @@ bool ColorDetector<T>::contains(unsigned int color, uint64_t edge) {
 	return eqT[colorCnt*colorIdx + color];
 }
 
-template <class T>
-size_t ColorDetector<T>::getColorCnt() {
+template <class T1, class T2, class T3>
+size_t ColorDetector<T1, T2, T3>::getColorCnt() {
 	return colorCnt;
 }
 
-template class ColorDetector<RBVec>;
-template class ColorDetector<RBVecCompressed>;
+template class ColorDetector<RBVec, RBVec, RBVec>;
+template class ColorDetector<RBVecCompressed, RBVecCompressed, RBVecCompressed>;
+template class ColorDetector<RBVec, RBVecCompressed, RBVecCompressed>;
+template class ColorDetector<RBVec, RBVec, RBVecCompressed>;
 
 /*int main(int, char*[]) {
 	ColorDetector<RBVecCompressed> cd("A.bitvec", "B.bitvec", "eqTable.bitvec", 6);

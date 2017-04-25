@@ -106,8 +106,8 @@ void print_color(color_bv& color)
 
 }
 
-template <class T>
-void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T>& colors, color_bv color_mask1, color_bv color_mask2)
+template <class T1, class T2, class T3>
+void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T1, T2, T3>& colors, color_bv color_mask1, color_bv color_mask2)
 {
 	uint64_t qt = getMilliCount();
 	uint64_t tqt = 0;
@@ -204,7 +204,7 @@ int main(int argc, char* argv[]) {
   debruijn_graph_shifted<> dbg;
   load_from_file(dbg, p.input_filename);
   cerr << "loading colors" << std::endl;
-  uint64_t num_colors = 1000;
+  uint64_t num_colors = 10;//1000;
 
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
@@ -221,7 +221,9 @@ int main(int argc, char* argv[]) {
   uint64_t checkPointTime = getMilliCount();
   uint64_t num_edges = dbg.num_edges();
   std::string res_dir = p.res_dir;
-  ColorDetector<RBVecCompressed> cd(res_dir, num_colors);
+  ColorDetector<RBVecCompressed, RBVecCompressed, RBVecCompressed> cd(res_dir, num_colors);
+//  ColorDetector<RBVec, RBVec, RBVec> cd(res_dir, num_colors);
+//  ColorDetector<RBVec, RBVecCompressed, RBVecCompressed> cd(res_dir, num_colors);
   find_bubbles(dbg, cd, mask1, mask2);
 
 }
