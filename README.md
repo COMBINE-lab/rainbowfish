@@ -11,14 +11,16 @@ Dependencies:
 	3. stxxl
 	4. tclap
 2. sparsepp (https://github.com/greg7mdp/sparsepp.git)
-3. rankselect (https://github.com/efficient/rankselect.git)
+3. ~~rankselect (https://github.com/efficient/rankselect.git)~~
 
 How to install:
 1. go through all the steps of installing VARI up until last step (building VARI)
 2. git clone sparsepp and rankselect into 3rd_party_src
 3. move sparsepp and rankselect hpp files into 3rd_party_inst/include
-4. put all the files in rainbowfish repository into home directory of cosmo (including Makefile)
-5. make (in cosmo directory)
+~~4. put all the files in rainbowfish repository into home directory of cosmo (including Makefile)~~
+4. `make` (in cosmo directory)
+5. git clone rainbowfish *inside the main cosmo directory*.
+6. cd into the rainbowfish sub-directory and `make`.
 
 How to run on NEWTON:
 First of all create a directory in which you want to store all bitvectors (label, rank, and equivalence table bitvectors; compressed or uncompressed). 
