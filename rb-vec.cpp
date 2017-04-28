@@ -71,7 +71,7 @@ boost::dynamic_bitset<> RBVec::readBitset(std::string infileName){
   std::cerr << infileName << " -- size " << bs_size <<std::endl;
   unsigned char* bytes = new unsigned char[bytes_len];
  // for (uint64_t i=0; i<bytes_len;i++) bytes[i]=0;
-  std::memset(bytes, 0, sizeof(bytes));
+  std::memset(bytes, 0, bytes_len);
   infile.read(reinterpret_cast<char*>(bytes), bytes_len);
   size_t ctr = 0;
   for (size_t bytectr=0; bytectr < bytes_len; ++bytectr) {
