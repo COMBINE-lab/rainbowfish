@@ -46,9 +46,9 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   string color_mask2 = "color_mask2";
   TCLAP::ValueArg<std::string> color_mask2_arg("b", "color_mask2",
 	    "Color mask 2, color2 [" + color_mask2 + "]", false, "", color_mask2, cmd);
-    TCLAP::UnlabeledValueArg<std::string> res_dir_arg("dir",
-					                                                             "Result directory. Should have created the directory first.", true, "", "res_dir", cmd);
-	
+    TCLAP::UnlabeledValueArg<std::string> res_dir_arg("dir", "Result directory. Should have created the directory first.", true, "", "res_dir", cmd);	
+    TCLAP::UnlabeledValueArg<std::string> bitvectors_type_arg("bv_type","format is like ccc, uuu, ucc, .. c=compressed, u=uncompressed. order = label, rank, eqTable", true, "", "bv_type", cmd);
+
   cmd.parse( argc, argv );
 
   params.input_filename  = input_filename_arg.getValue();
@@ -56,8 +56,14 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   params.color_mask1     = color_mask1_arg.getValue();
   params.color_mask2     = color_mask2_arg.getValue();
   params.res_dir		 = res_dir_arg.getValue();
+  params.bvs_type         = bitvectors_type_arg.getValue();
 }
-
+void deserialize_info(uint64_t* num_colors, uint64_t* num_edges, std::string res_dir) {
+	std::ifstream infile(res_dir+"/info", std::ios::binary);
+	infile.read(reinterpret_cast<char*>(num_colors), sizeof(*num_colors));
+	infile.read(reinterpret_cast<char*>(num_edges), sizeof(*num_edges));
+	infile.close();
+}
 static char base[] = {'?','A','C','G','T'};
 
 
@@ -107,7 +113,7 @@ void print_color(color_bv& color)
 }
 
 template <class T1, class T2, class T3>
-void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T1, T2, T3>& colors, color_bv color_mask1, color_bv color_mask2)
+void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T1, T2, T3>& colors, /*sd_vector<> colors2,*/ color_bv color_mask1, color_bv color_mask2)
 {
 	uint64_t qt = getMilliCount();
 	uint64_t tqt = 0;
@@ -115,12 +121,12 @@ void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T1, T2, T3>
     uint64_t num_colors = colors.getColorCnt();
 
     sdsl::bit_vector visited = sdsl::bit_vector(dbg.num_nodes(), 0);
-    cout << "Starting to look for bubbles\n";
+	std::cerr << "Starting to look for bubbles for "<<num_colors<< " colors.\n";
     std::vector<std::string> branch_labels(2);
 
     // for each candidate start nodein the graph
     for (size_t start_node = 0; start_node < dbg.num_nodes(); start_node++) {
-
+		if (start_node % 10000000 == 0) std::cerr<< start_node << " out of " << dbg.num_nodes() <<"\n";
         // if its out degree is two and we haven't encountered it already, start processing it like it's the start of a bubble
         if (!visited[start_node] && dbg.outdegree(start_node) == 2) { //FIXME: why do we only care about outdegree == 2?
             // initialize bubble tracking variables
@@ -142,11 +148,20 @@ void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T1, T2, T3>
                 branch_labels[branch_num] += base[x];
                 // build color mask
                 color_bv color_mask = 0;
+				//color_bv color_mask2 = 0;
 				//if (edge >= 9254208) std::cout<<edge<<":";
 				//std::cout<<edge<<":";
 				qt = getMilliCount();
-                for (uint64_t c = 0; c < num_colors; c++)
-                    color_mask |= colors.contains(c, edge) << c; //colors[edge * num_colors + c] << c;
+                for (uint64_t c = 0; c < num_colors; c++) {
+						bool ours = colors.contains(c, edge);					
+						color_mask.set(c, ours);
+						//if (ours != colors2[edge*num_colors+c]) 
+						//		std::cout<<" e"<<edge<<",c"<<c<<":"<<ours<<","<<colors2[edge*num_colors+c]<<"\n";
+
+                     	//color_mask2 |= color_bv(colors2[edge * num_colors + c]) << c;
+				}
+
+				//if (color_mask != color_mask2) std::cout <<"\n dif e"<<edge<<":"<<color_mask.count()<<","<<color_mask2.count()<<"\n";
 				tqt += getMilliSpan(qt);				
                 branch_color[branch_num] = color_mask;
 
@@ -189,26 +204,36 @@ void find_bubbles(const debruijn_graph_shifted<> &dbg, ColorDetector<T1, T2, T3>
             }
         }
     }
-    cerr << "Find bubbles time: " << getMilliSpan(t) << " ms , query time: " << tqt << " ms" << std::endl;
+	std::cerr << "Find bubbles time: " << getMilliSpan(t) << " ms , query time: " << tqt << " ms" << std::endl;
 }
 
 
+class MainBase {
+	public:
+			MainBase(){}
+			virtual void run(parameters_t& p){ std::cout<<p.bvs_type<<"\n";}
+};
 
-int main(int argc, char* argv[]) {
-  parameters_t p;
-  parse_arguments(argc, argv, p);
-  cerr << "pack-color compiled with supported colors=" << NUM_COLS << std::endl;
+template <class T1, class T2, class T3>
+class MainTemplatized : public MainBase {
+	public:
+			MainTemplatized(){}
+			void run(parameters_t& p) {
+  cerr << typeid(T1).name() << " " << typeid(T2).name() << " " << typeid(T3).name() << endl;
+  cerr << "pack-color compiled with supported colors=" << NUM_COLS << endl;
   //ifstream input(p.input_filename, ios::in|ios::binary|ios::ate);
    //Can add this to save a couple seconds off traversal - not really worth it.
   cerr << "loading dbg" << std::endl;
   debruijn_graph_shifted<> dbg;
   load_from_file(dbg, p.input_filename);
   cerr << "loading colors" << std::endl;
-  uint64_t num_colors = 10;//1000;
-
+  uint64_t num_colors = 0;
+  uint64_t num_edges = 0;
+  deserialize_info(&num_colors, &num_edges, p.res_dir);
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
-  cerr << "num_edges()   : " << dbg.num_edges() << endl;
+  cerr << "num_edges()   : " << dbg.num_edges() << " or " << num_edges << endl;
+  cerr << "num colors    : " << num_colors << endl;
   cerr << "Total size    : " << size_in_mega_bytes(dbg) << " MB" << endl;
   cerr << "Bits per edge : " << bits_per_element(dbg) << " Bits" << endl;
 
@@ -218,12 +243,37 @@ int main(int argc, char* argv[]) {
   color_bv mask2 = (p.color_mask2.length() > 0) ? atoi(p.color_mask2.c_str()) : -1;
 
   uint64_t startTime = getMilliCount();
-  uint64_t checkPointTime = getMilliCount();
-  uint64_t num_edges = dbg.num_edges();
+  //uint64_t checkPointTime = getMilliCount();
   std::string res_dir = p.res_dir;
-  ColorDetector<RBVecCompressed, RBVecCompressed, RBVecCompressed> cd(res_dir, num_colors);
-//  ColorDetector<RBVec, RBVec, RBVec> cd(res_dir, num_colors);
-//  ColorDetector<RBVec, RBVecCompressed, RBVecCompressed> cd(res_dir, num_colors);
-  find_bubbles(dbg, cd, mask1, mask2);
+  ColorDetector<T1, T2, T3> cd(res_dir, num_colors);
+  //sd_vector<> colors;
+  //load_from_file(colors, p.color_filename);
+  find_bubbles(dbg, cd,/*colors,*/ mask1, mask2);
+  cerr<<" FIND BUBBLE Total time (including loading bitvectors but not dbg) : " << getMilliSpan(startTime) << " ms\n";
+			}
+};
+
+template class MainTemplatized<RBVec, RBVec, RBVec>;
+template class MainTemplatized<RBVecCompressed, RBVecCompressed, RBVecCompressed>;
+template class MainTemplatized<RBVec, RBVecCompressed, RBVecCompressed>;
+template class MainTemplatized<RBVec, RBVec, RBVecCompressed>;
+
+
+
+int main(int argc, char* argv[]) {
+  parameters_t p;
+  parse_arguments(argc, argv, p);
+	MainBase* m{nullptr};		
+	if (p.bvs_type == "ccc")
+				m = new MainTemplatized<RBVecCompressed, RBVecCompressed, RBVecCompressed>();
+	else if (p.bvs_type == "uuu")
+				m = new  MainTemplatized<RBVec, RBVec, RBVec>();
+	else if (p.bvs_type == "ucc")
+				m = new  MainTemplatized<RBVec, RBVecCompressed, RBVecCompressed>();
+	else if (p.bvs_type == "uuc")
+				m = new  MainTemplatized<RBVec, RBVec, RBVecCompressed>();
+	if (m)
+		m->run(p);
+	else std::cout<<"Initialization failed.\n";
 
 }

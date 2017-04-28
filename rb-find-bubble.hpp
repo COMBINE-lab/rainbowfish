@@ -8,6 +8,7 @@ struct parameters_t {
   std::string color_mask1 = "";
   std::string color_mask2 = "";
   std::string res_dir = "";
+  std::string bvs_type= "";
 };
 
 int getMilliCount();

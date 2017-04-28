@@ -70,6 +70,13 @@ void deserialize_color_bv(std::ifstream &colorfile, color_bv &value)
     colorfile.read((char *)&value, sizeof(color_bv));
 }
 
+bool serialize_info(uint64_t num_colors, uint64_t num_edges, std::string res_dir) {
+	std::ofstream outfile(res_dir+"/info", std::ios::binary);
+	outfile.write(reinterpret_cast<char*>(&num_colors), sizeof(num_colors));
+	outfile.write(reinterpret_cast<char*>(&num_edges), sizeof(num_edges));
+	outfile.close();
+}
+
 template <class T1, class T2, class T3>
 class ColorPacker {
 	public:
@@ -174,12 +181,11 @@ int main(int argc, char * argv[])
 	uint64_t total_edges = 0;
 	std::cerr<<"Starting from hereeeee\n";
     for (const auto& c : eqClsVec) {
-	 	//std::cerr <<"eq cls "<<lbl<< ", "<< c.second<<": \n";
+	 	std::cout <<"cls"<<lbl<< ", "<< c.second<<": ";
 		total_edges += c.second;
-		//for (int k=0;k<1000;k++) if (c.first[k] == true) std::cerr<<k<<" ";
-		//std::cerr<<"\n";
+		for (int k=0;k<num_color;k++) if (c.first[k] == true) std::cout<<k<<" ";
+		std::cout<<"\n";
 		totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
-		//std::cerr << lbl << " : " << c.second << std::endl;
 		eqCls[c.first] = lbl++;
 	}
 	std::cerr << getMilliSpan(checkPointTime) << " ms : (Sorting eq vector and ) assigning a label to each eq class." << std::endl;
@@ -209,7 +215,8 @@ int main(int argc, char * argv[])
 
 	// SECOND ROUND going over all edges
 	checkPointTime = getMilliCount();
-	startTime = getMilliCount();
+	int packStartTime = getMilliCount();
+	//startTime = getMilliCount();
 	// create label & rank vectors
    	colorfile.seekg(0, colorfile.beg);
 	uint64_t curPos = 0;
@@ -220,7 +227,8 @@ int main(int argc, char * argv[])
 		}
 		color_bv value;
 		deserialize_color_bv(colorfile, value);
-		//std::cout<<i <<" class : " << eqCls[value] << "\n";
+		if (i <= 2000)
+			std::cout<<"e"<<i <<":" << eqCls[value] << " ";
 	//	std::cout<<value<<"\n";
 		//if (i < 100) {
 			//std::cerr<<"pos"<<curPos<<", eq"<<eqCls[value]<<": ";
@@ -232,11 +240,11 @@ int main(int argc, char * argv[])
 		// if we want to set the end, here we should say b.set(curPos-1);
 		// TODO if for last edge we need an extra 1 we should have 1 extra bit at the end of the vector and set it here
 	}	
-	std::cerr << getMilliSpan(startTime) << " ms : Packing label & rank into bitvector." << std::endl;
+	std::cerr << "\n" << getMilliSpan(packStartTime) << " ms : Packing label & rank into bitvector." << std::endl;
 	
 	checkPointTime = getMilliCount();
 	cp->storeAll(res_dir);
 	std::cerr << getMilliSpan(checkPointTime) << " ms : Storing all three bitvectors." << std::endl << std::endl;
-
+	serialize_info(num_color, num_edges, res_dir);
 	std::cerr << getMilliSpan(startTime)/1000.0 << " s : Total Time." << std::endl;
 }
