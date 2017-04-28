@@ -26,7 +26,7 @@ using spp::sparse_hash_map;
 
 #include <cstdlib>
 #include <sys/timeb.h>
-#include "pack-color.hpp"
+#include "rb-pack-color.hpp"
 #include <bitset>
 #include "rb-vec.hpp"
 int getMilliCount()
