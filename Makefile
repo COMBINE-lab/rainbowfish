@@ -60,7 +60,7 @@ RANK9SEL_SRC=./Sux/*.cpp
 RB_VEC_SRC=rb-vec.cpp bit_array.c $(RANK9SEL_SRC)
 RB_QUERY_SRC=rb-query.cpp $(RB_VEC_SRC)
 
-BINARIES=rb-pack-color rb-bubble 
+BINARIES=rb-pack-color rb-find-bubble rb-validate
 
 default: all
 
@@ -74,6 +74,11 @@ rb-pack-color: rb-pack-color.cpp $(RB_VEC_SRC) $(BUILD_REQS) compiler_flags
 
 rb-find-bubble: rb-find-bubble.cpp $(RB_QUERY_SRC) $(BUILD_REQS) compiler_flags
 	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ rb-find-bubble.cpp $(RB_QUERY_SRC) $(KMC_OBJS) $(DEP_FLAGS)
+
+rb-validate: rb-validate.cpp $(RB_QUERY_SRC) $(BUILD_REQS) compiler_flags
+	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ rb-validate.cpp $(RB_QUERY_SRC) $(KMC_OBJS) $(DEP_FLAGS)
+
+
 
 all: $(BINARIES)
 
