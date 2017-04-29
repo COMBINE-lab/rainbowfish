@@ -57,7 +57,7 @@ RANKSELECT_OBJS=$(RANKSELECT_PATH)/bitmap.o
 BUILD_REQS=$(COSMO_PATH)/lut.hpp $(COSMO_PATH)/debug.hpp $(COSMO_PATH)/utility.hpp $(COSMO_PATH)/io.hpp $(COSMO_PATH)/sort.hpp $(COSMO_PATH)/kmer.hpp $(COSMO_PATH)/dummies.hpp $(COSMO_PATH)/debruijn_graph.hpp $(COSMO_PATH)/debruijn_graph_shifted.hpp $(COSMO_PATH)/pack-color.hpp $(COSMO_PATH)/cosmo-color-pd.hpp $(COSMO_PATH)
 COLOR_REQS=$(COSMO_PATH)/colored_debruijn_graph.hpp $(COSMO_PATH)/io.hpp $(COSMO_PATH)/debug.hpp
 RANK9SEL_SRC=./Sux/*.cpp
-RB_VEC_SRC=rb-vec.cpp bit_array.c $(RANK9SEL_SRC)
+RB_VEC_SRC=rb-vec.cpp rb-vec.hpp bit_array.c $(RANK9SEL_SRC)
 RB_QUERY_SRC=rb-query.cpp $(RB_VEC_SRC)
 
 BINARIES=rb-pack-color rb-find-bubble rb-validate

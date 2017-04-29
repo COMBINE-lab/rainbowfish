@@ -24,7 +24,23 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	if (edge == prevEdge_) { return prevContains_(color); }
 	//uint64_t st = getMilliCountt();
 	uint64_t start = b.select(edge);
-	uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
+	//uint64_t end = b.select(edge+1);
+	
+	uint64_t next = b.getInt(start, 64);
+	if (!(next & 0x0000000000000001)) {
+		std::cerr << "lowest bit should always be set!\n";
+	}
+	//next = (next & 0x7FFFFFFFFFFFFFFF);
+	next = (next & 0xFFFFFFFFFFFFFFFE);
+	//std::cerr << "after\n";
+	auto nzero = __builtin_ctzll(next);
+	uint64_t end = start + nzero;//(64 - nzero);
+	
+	//uint64_t end = b.select(edge+1);
+	/*uint64_t end_check = b.select(edge+1);//todo: what if the edge is the last one?
+	if (end != end_check) {
+		std::cerr << "start = " << start << ", end with __builtin_clz = " << end << ", but with select = " << end_check << "\n";
+	}*/
 	//select_t += getMilliSpant(st);
 	//st = getMilliCountt();
 	uint64_t colorIdx = A.getInt(start, end-start);

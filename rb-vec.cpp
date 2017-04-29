@@ -3,13 +3,18 @@
 
 RBVec::RBVec(std::string fileName, bool hasSelect) {
 		this->hasSelect = hasSelect;
-		if (!hasSelect) bitvec_ = readBitset(fileName+VEC_EXT);
-		else selbitvec_ = readRSBitset(fileName+VEC_EXT);
+		sdsl::load_from_file(bitvec_, fileName+VEC_EXT);
+		//if (hasSelect) selbitvec_ = new sdsl::select_support_mcl<1,1>(&bitvec_);
+		if (hasSelect) selbitvec_ = new rank9sel(bitvec_.data(), bitvec_.size());
+		//if (!hasSelect) bitvec_ = readBitset(fileName+VEC_EXT);
+		//else selbitvec_ = readRSBitset(fileName+VEC_EXT);
+		bvsize_ = bitvec_.size();
 }
 
 RBVec::RBVec(uint64_t bitSize) {
-		boost::dynamic_bitset<> tmp_bitvec(bitSize);
-		bitvec_ = tmp_bitvec;
+		//boost::dynamic_bitset<> tmp_bitvec(bitSize);
+		//bitvec_ = tmp_bitvec;
+		bitvec_ = sdsl::bit_vector(bitSize);
 }
 
 //TODO implement it for rank9sel
@@ -19,26 +24,39 @@ bool RBVec::operator[](uint64_t idx) const {
 
 //TODO will get so slow if I set if/else for bitvec vs bitselvec
 void RBVec::set(uint64_t idx) {
-	bitvec_.set(idx);
+	//bitvec_.set(idx);
+	bitvec_[idx] = 1;
 }
 
 // will just return a valid number if hasSelect is true
 uint64_t RBVec::select(uint64_t rnk) {
 	//no +1 for rank9sel but +1 for rankselect
-	return selbitvec_->select(rnk);
+	//return (rnk < 28273951) ? selbitvec_->select(rnk+1) : bitvec_.size() - 1;
+	return selbitvec_->select(rnk); 
 }
 
 //todo implement it for BitPoppy
 uint64_t RBVec::getInt(uint64_t offset, uint64_t bitLen) {
+	return bitvec_.get_int(offset, static_cast<uint8_t>(bitLen));
+	/*
 	uint64_t inted = 0;
+	bitLen = ((offset + bitLen) >= bvsize_) ? bvsize_ - offset - 1: bitLen;
 	//assumption: labels are put in A from least significant digit to most (e.g. label = 4 is put in A in the order 001)
 	for (uint64_t ctr = 0; ctr < bitLen; ctr++) {
 		inted |= (bitvec_[offset+ctr] << ctr);
 	}
 	return inted;
+	*/
+}
+
+bool RBVec::setInt(uint64_t offset, uint64_t num, uint8_t bitlen) {
+	bitvec_.set_int(offset, num, bitlen);
+	return true;
 }
 
 bool RBVec::serialize(std::string fileName) {
+	sdsl::store_to_file(bitvec_, fileName + VEC_EXT);
+	/*
 	fileName = fileName + VEC_EXT;
 	std::ofstream out(fileName, std::ios::out | std::ios::binary);
 	int bitctr{7};
@@ -59,6 +77,7 @@ bool RBVec::serialize(std::string fileName) {
 		out.write(reinterpret_cast<char*>(&byte), sizeof(byte));
 	}
 	out.close();
+	*/
 	return true;
 }
 
@@ -113,9 +132,9 @@ RBVecCompressed::RBVecCompressed(std::string fileName, bool hasSelect) {
 	fileName = fileName+COMPRESSEDVEC_EXT;
 	sdsl::load_from_file(rrr_bitvec_, fileName);
 	if (hasSelect) {
-		selbitvec_ = sdsl:: rrr_vector<63>::select_1_type(&rrr_bitvec_);
+	  selbitvec_ = decltype(rrr_bitvec_)::select_1_type(&rrr_bitvec_);
 	}
-
+	bvsize_ = rrr_bitvec_.size();
   	std::cerr << fileName << " -- size " << rrr_bitvec_.size() <<std::endl;
 }
 
@@ -139,29 +158,39 @@ void RBVecCompressed::set(uint64_t idx) {
 //Assume that it is just called when hasSelect is set
 uint64_t RBVecCompressed::select(uint64_t rnk) {
 	//rank starts at 1 in sdsl::rrr_vector::select_1_type so we +1 the input
+	//if (!hasSelect) { std::cerr << "Danger will robinson\n";}
 	rnk++;
 	return selbitvec_(rnk);
 }
 
 // gets int value from rrr_vector
 uint64_t RBVecCompressed::getInt(uint64_t offset, uint64_t bitLen) {
+	return rrr_bitvec_.get_int(offset, bitLen);
+	/*
 	uint64_t inted = 0;
 	//assumption: labels are put in A from least significant digit to most (e.g. label = 4 is put in A in the order 001)
 	for (uint64_t ctr = 0; ctr < bitLen; ctr++) {
 		inted |= (rrr_bitvec_[offset+ctr] << ctr);
 	}
 	return inted;
+	*/
+}
+
+bool RBVecCompressed::setInt(uint64_t offset, uint64_t num, uint8_t bitlen) {
+	std::cerr << "not implemented yet";
+	return false;
 }
 
 // compresses bitvector into rrr_vector and serializes it
 bool RBVecCompressed::serialize(std::string fileName) {
 	fileName = fileName+COMPRESSEDVEC_EXT;	
-	sdsl::rrr_vector<63> rrr_bitvec(bitvec_);
+	compressed_vec rrr_bitvec(bitvec_);
   	std::cerr << fileName << " -- size " << rrr_bitvec.size() <<std::endl;
 	return sdsl::store_to_file(rrr_bitvec, fileName);
 }
 
-sdsl::rrr_vector<63> RBVecCompressed::readRSbitset(std::string fileName) {
+/*
+sdsl::rrr_vector<63, sdsl::int_vector<>, 8> RBVecCompressed::readRSbitset(std::string fileName) {
   std::ifstream infile(fileName+COMPRESSEDVEC_EXT, std::ios::binary);
   size_t bs_size;
   infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
@@ -182,3 +211,4 @@ sdsl::rrr_vector<63> RBVecCompressed::readRSbitset(std::string fileName) {
   infile.close(); 
   return bitvec;
 }
+*/

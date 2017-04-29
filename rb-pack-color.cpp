@@ -92,8 +92,11 @@ class ColorPacker {
 				// 	...
 			}
 
-			size_t insertColorLabel(unsigned num, uint64_t pos) {
+			size_t insertColorLabel(uint64_t num, uint64_t pos) {
 				// most significant bit of number goes down to the end of the bitset
+				uint8_t nbits = static_cast<uint8_t>(num==0?1:ceil(log2(num+1)));
+				lblvec.setInt(pos, num, nbits);
+				/*
 				do {
 					if (num&1) {
 						lblvec.set(pos);
@@ -101,7 +104,8 @@ class ColorPacker {
 					num>>=1;  
 					pos++;
 				} while(num);
-				return pos;
+				*/
+				return pos + nbits;
 			}
 			
 			bool storeAll(std::string dir) {
@@ -195,9 +199,9 @@ int main(int argc, char * argv[])
     totalBits += num_color * eqCls.size();
 	std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
 	
-	ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
+	//ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
 	//ColorPacker<RBVec, RBVec, RBVec> * cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
-	//ColorPacker<RBVec, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
+	ColorPacker<RBVec, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
 
 //	if (compress) cp = new ColorPacker<RBVecCompressed>(res_dir);
 //	else cp = new ColorPacker<RBVec>(res_dir);
