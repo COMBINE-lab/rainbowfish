@@ -19,15 +19,33 @@ bool ColorDetector<T1, T2, T3>::prevContains_(unsigned int color) {
 	return res;
 }
 
+inline int64_t bitscanforward(uint64_t val)
+{	
+	if (val == 0) {
+		return -1;
+	} else {
+		asm("bsf %[val], %[val]"
+			: [val] "+r" (val)
+			:
+			: "cc");
+		//we need the distance between two 1s, so I add 1 to the index which starts from 0
+		return val + 1;
+	}
+}
+
 template <class T1, class T2, class T3>
 bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	if (edge == prevEdge_) { return prevContains_(color); }
-	//uint64_t st = getMilliCountt();
+	//uint64_t st = 0;
+	//st = getMilliCountt();
 	uint64_t start = b.select(edge);
-	uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
+	//uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
+	uint64_t next_word = b.getInt(start+1, 64);
+	uint64_t len = bitscanforward(next_word); 
 	//select_t += getMilliSpant(st);
 	//st = getMilliCountt();
-	uint64_t colorIdx = A.getInt(start, end-start);
+	//uint64_t colorIdx = A.getInt(start, end-start);
+	uint64_t colorIdx = A.getInt(start, len);
 	//getInt_t += getMilliSpant(st);
 	prevEdge_ = edge;
 	prevColor_ = colorIdx;
