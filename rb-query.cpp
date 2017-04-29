@@ -44,6 +44,7 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	// the start_offset
 	uint64_t masked_word = (b.get_word(start) << (start_offset+1));
 	// if the masked_word is 0 that means the next bit set is in the next word
+	// TODO: check if the start_index is the last machine word in the bit vector
 	if (!masked_word) {
 		start_index++;
 		masked_word = (b.get_word(start+64));
