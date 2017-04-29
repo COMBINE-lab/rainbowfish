@@ -104,7 +104,7 @@ class MainTemplatized : public MainBase {
 				//  std::cerr<<"******* RBVECCOMPRESSED, RBVECCOMPRESSED, RBVECCOMPRESSED *******\n";
 				// std::cerr<<"******* RBVEC, RBVEC, RBVEC *******\n";
 				//  std::cerr<<"******* RBVEC, RBVECCOMPRESSED, RBVECCOMPRESSED *******\n";
-				/*
+/*				
 				  uint64_t startTime = getMilliCount();
 				  uint64_t rbsum = 0;
 				  uint64_t cosmosum = 0;
@@ -139,7 +139,7 @@ class MainTemplatized : public MainBase {
 				  std::cerr << "\n\n" << getMilliSpan(startTime) << " ms : Time for total of " << num_edges * num_colors << " comparisons.\n";  
 				  if (allTheSame) std::cerr<<" HURRAAAAY! Validation Test Passed.\n";
 				  else std::cerr<<"NOT GOOD! Validation Test Failed.\n";
-				*/
+*/				
 				  bool temp;
 				  uint64_t totalsetbit = 0;
 				  uint64_t rainbow_st = getMilliCount();

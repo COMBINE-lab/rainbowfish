@@ -20,6 +20,7 @@ class ColorDetector {
 	uint64_t colorCnt_;
 	uint64_t prevEdge_;
 	uint64_t prevColor_;
+	uint64_t* prevColorVal_;
 	bool prevContains_(unsigned int color);
   public:
 	ColorDetector(std::string dir, uint64_t colorCnt); // todo: we should keep count of colors or k-mers in top of the file

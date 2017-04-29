@@ -80,10 +80,6 @@ bool serialize_info(uint64_t num_colors,
 		    std::string select_type,
 		    std::string eqtable_type,
 		    std::string res_dir) {
-	std::ofstream outfile(res_dir+"/info", std::ios::binary);
-	outfile.write(reinterpret_cast<char*>(&num_colors), sizeof(num_colors));
-	outfile.write(reinterpret_cast<char*>(&num_edges), sizeof(num_edges));
-	outfile.close();
 
 	std::string jsonFileName = res_dir + "/info.json";
 	std::ofstream jsonFile(jsonFileName);
@@ -96,6 +92,7 @@ bool serialize_info(uint64_t num_colors,
 	archive(cereal::make_nvp("num_edges", num_edges));
 	}
 	jsonFile.close();
+	return true;
 }
 
 template <class T1, class T2, class T3>
@@ -106,7 +103,7 @@ class ColorPacker {
 			T3 eqTvec;
 	public:
 			ColorPacker(uint64_t eqBitSize, uint64_t lblBitSize) :
-				eqTvec(eqBitSize), lblvec(lblBitSize), rnkvec(lblBitSize) {
+				lblvec(lblBitSize), rnkvec(lblBitSize), eqTvec(eqBitSize) {
 				//TODO fillout info file
 				// 	color cnt
 				// 	kmer cnt
@@ -201,7 +198,7 @@ int main(int argc, char * argv[])
     for (const auto& c : eqClsVec) {
 	 	std::cout <<"cls"<<lbl<< ", "<< c.second<<": ";
 		total_edges += c.second;
-		for (int k=0;k<num_color;k++) if (c.first[k] == true) std::cout<<k<<" ";
+		for (uint64_t k=0;k<num_color;k++) if (c.first[k] == true) std::cout<<k<<" ";
 		std::cout<<"\n";
 		totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
 		eqCls[c.first] = lbl++;
@@ -214,8 +211,7 @@ int main(int argc, char * argv[])
 	std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
 	
 	//ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
-	//ColorPacker<RBVec, RBVec, RBVec> * cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
-	ColorPacker<RBVec, RBVecCompressed, RBVecCompressed> * cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
+	ColorPacker<RBVec, RBVec, RBVec> * cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
 
 //	if (compress) cp = new ColorPacker<RBVecCompressed>(res_dir);
 //	else cp = new ColorPacker<RBVec>(res_dir);
