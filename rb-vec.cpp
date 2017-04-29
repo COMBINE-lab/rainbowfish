@@ -147,9 +147,13 @@ uint64_t RBVecCompressed::select(uint64_t rnk) {
 uint64_t RBVecCompressed::getInt(uint64_t offset, uint64_t bitLen) {
 	uint64_t inted = 0;
 	//assumption: labels are put in A from least significant digit to most (e.g. label = 4 is put in A in the order 001)
+	/*
 	for (uint64_t ctr = 0; ctr < bitLen; ctr++) {
 		inted |= (rrr_bitvec_[offset+ctr] << ctr);
 	}
+*/
+	inted = rrr_bitvec_.get_int(offset, bitLen);
+	//if (inted != temp) std::cout<< inted << " " << temp<< " n ";
 	return inted;
 }
 
