@@ -19,13 +19,24 @@ bool ColorDetector<T1, T2, T3>::prevContains_(unsigned int color) {
 	return res;
 }
 
+inline int64_t bitscanforward(uint64_t val)
+{	
+	if (val == 0) {
+		return -1;
+	} else {
+		asm("bsf %[val], %[val]"
+			: [val] "+r" (val)
+			:
+			: "cc");
+		//we need the distance between two 1s, so I add 1 to the index which starts from 0
+		return val + 1;
+	}
+}
+
 template <class T1, class T2, class T3>
 bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	if (edge == prevEdge_) { return prevContains_(color); }
-	//uint64_t st = getMilliCountt();
 	uint64_t start = b.select(edge);
-	//uint64_t end = b.select(edge+1);
-	
 	uint64_t next = b.getInt(start, 64);
 	if (!(next & 0x0000000000000001)) {
 		std::cerr << "lowest bit should always be set!\n";
@@ -34,15 +45,22 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	next = (next & 0xFFFFFFFFFFFFFFFE);
 	//std::cerr << "after\n";
 	auto nzero = __builtin_ctzll(next);
-	uint64_t end = start + nzero;//(64 - nzero);
+	uint64_t end = start + nzero;
 	
 	//uint64_t end = b.select(edge+1);
 	/*uint64_t end_check = b.select(edge+1);//todo: what if the edge is the last one?
 	if (end != end_check) {
 		std::cerr << "start = " << start << ", end with __builtin_clz = " << end << ", but with select = " << end_check << "\n";
 	}*/
-	//select_t += getMilliSpant(st);
-	//st = getMilliCountt();
+
+	/** Alternative bitscan forward **/
+	/*
+	//uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
+	uint64_t next_word = b.getInt(start+1, 64);
+	uint64_t len = bitscanforward(next_word); 
+	*/
+	/** Alternative bitscan forward **/
+
 	uint64_t colorIdx = A.getInt(start, end-start);
 	//getInt_t += getMilliSpant(st);
 	prevEdge_ = edge;

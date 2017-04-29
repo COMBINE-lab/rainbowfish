@@ -11,7 +11,7 @@ COSMO_PATH=../
 DEP_PATH=$(COSMO_PATH)/3rd_party_inst
 KMC_PATH=$(COSMO_PATH)/3rd_party_src/KMC
 #RANKSELECT_PATH=./3rd_party_inst/include/rankselect
-INC=-isystem $(DEP_PATH)/include -isystem $(BOOST_PATH)/include -isystem ./Sux -isystem $(COSMO_PATH)
+INC=-isystem $(DEP_PATH)/include -isystem $(BOOST_PATH)/include -isystem ./Sux -isystem $(COSMO_PATH) -isystem include
 LIB=-L$(DEP_PATH)/lib -L./ -L$(BOOST_PATH)/lib
 BOOST_FLAGS= -lboost_system -lboost_filesystem
 DEP_FLAGS=$(INC) $(LIB) $(BOOST_FLAGS) -isystem $(KMC_PATH) -lsdsl -fopenmp #openmp is needed for logging
@@ -59,6 +59,7 @@ COLOR_REQS=$(COSMO_PATH)/colored_debruijn_graph.hpp $(COSMO_PATH)/io.hpp $(COSMO
 RANK9SEL_SRC=./Sux/*.cpp
 RB_VEC_SRC=rb-vec.cpp rb-vec.hpp bit_array.c $(RANK9SEL_SRC)
 RB_QUERY_SRC=rb-query.cpp $(RB_VEC_SRC)
+RB_FS_SRC=rb-filesystem.cpp
 
 BINARIES=rb-pack-color rb-find-bubble rb-validate
 
@@ -69,14 +70,14 @@ default: all
 compiler_flags: force
 	@echo $(CPP_FLAGS) | cmp -s - $@ || echo $(CPP_FLAGS) > $@
 
-rb-pack-color: rb-pack-color.cpp $(RB_VEC_SRC) $(BUILD_REQS) compiler_flags
-	$(CXX) $(CPP_FLAGS) rb-pack-color.cpp $(RB_VEC_SRC) -o $@ $(KMC_OBJS) $(DEP_FLAGS)
+rb-pack-color: rb-pack-color.cpp $(RB_VEC_SRC) $(BUILD_REQS) compiler_flags $(RB_FS_SRC)
+	$(CXX) $(CPP_FLAGS) rb-pack-color.cpp $(RB_VEC_SRC) $(RB_FS_SRC) -o $@ $(KMC_OBJS) $(DEP_FLAGS)
 
-rb-find-bubble: rb-find-bubble.cpp $(RB_QUERY_SRC) $(BUILD_REQS) compiler_flags
-	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ rb-find-bubble.cpp $(RB_QUERY_SRC) $(KMC_OBJS) $(DEP_FLAGS)
+rb-find-bubble: rb-find-bubble.cpp $(RB_QUERY_SRC) $(BUILD_REQS) compiler_flags $(RB_FS_SRC)
+	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ rb-find-bubble.cpp $(RB_QUERY_SRC) $(RB_FS_SRC) $(KMC_OBJS) $(DEP_FLAGS)
 
-rb-validate: rb-validate.cpp $(RB_QUERY_SRC) $(BUILD_REQS) compiler_flags
-	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ rb-validate.cpp $(RB_QUERY_SRC) $(KMC_OBJS) $(DEP_FLAGS)
+rb-validate: rb-validate.cpp $(RB_QUERY_SRC) $(BUILD_REQS) compiler_flags $(RB_FS_SRC)
+	$(CXX) $(CPP_FLAGS) $(RB_QUERY_REQS) -o $@ rb-validate.cpp $(RB_QUERY_SRC) $(RB_FS_SRC) $(KMC_OBJS) $(DEP_FLAGS)
 
 
 

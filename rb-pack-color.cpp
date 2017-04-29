@@ -7,6 +7,10 @@
 // TCLAP
 #include "tclap/CmdLine.h"
 
+#include "cereal/archives/json.hpp"
+
+#include "rb-filesystem.hpp"
+
 #include <sdsl/bit_vectors.hpp>
 #include <cstdio>
 
@@ -70,11 +74,28 @@ void deserialize_color_bv(std::ifstream &colorfile, color_bv &value)
     colorfile.read((char *)&value, sizeof(color_bv));
 }
 
-bool serialize_info(uint64_t num_colors, uint64_t num_edges, std::string res_dir) {
+bool serialize_info(uint64_t num_colors, 
+		    uint64_t num_edges, 
+		    std::string label_type,
+		    std::string select_type,
+		    std::string eqtable_type,
+		    std::string res_dir) {
 	std::ofstream outfile(res_dir+"/info", std::ios::binary);
 	outfile.write(reinterpret_cast<char*>(&num_colors), sizeof(num_colors));
 	outfile.write(reinterpret_cast<char*>(&num_edges), sizeof(num_edges));
 	outfile.close();
+
+	std::string jsonFileName = res_dir + "/info.json";
+	std::ofstream jsonFile(jsonFileName);
+	{	
+	cereal::JSONOutputArchive archive(jsonFile);
+	archive(cereal::make_nvp("label_type", label_type)); 
+	archive(cereal::make_nvp("select_type", select_type));
+	archive(cereal::make_nvp("eqtable_type", eqtable_type));
+	archive(cereal::make_nvp("num_colors", num_colors));
+	archive(cereal::make_nvp("num_edges", num_edges));
+	}
+	jsonFile.close();
 }
 
 template <class T1, class T2, class T3>
@@ -96,15 +117,6 @@ class ColorPacker {
 				// most significant bit of number goes down to the end of the bitset
 				uint8_t nbits = static_cast<uint8_t>(num==0?1:ceil(log2(num+1)));
 				lblvec.setInt(pos, num, nbits);
-				/*
-				do {
-					if (num&1) {
-						lblvec.set(pos);
-					}
-					num>>=1;  
-					pos++;
-				} while(num);
-				*/
 				return pos + nbits;
 			}
 			
@@ -121,7 +133,9 @@ int main(int argc, char * argv[])
     std::cerr <<"Starting" << std::endl;
     parameters_t params;
     parse_arguments(argc, argv, params);
-
+    if (!rainbowfish::fs::FileExists(params.res_dir.c_str())) {
+	rainbowfish::fs::MakeDir(params.res_dir.c_str());
+    } 
     const char * file_name = params.input_filename.c_str();
     std::cerr << "file name: " << file_name << std::endl;
 
@@ -249,6 +263,6 @@ int main(int argc, char * argv[])
 	checkPointTime = getMilliCount();
 	cp->storeAll(res_dir);
 	std::cerr << getMilliSpan(checkPointTime) << " ms : Storing all three bitvectors." << std::endl << std::endl;
-	serialize_info(num_color, num_edges, res_dir);
+	serialize_info(num_color, num_edges, "uncompressed", "compressed", "compressed", res_dir);
 	std::cerr << getMilliSpan(startTime)/1000.0 << " s : Total Time." << std::endl;
 }

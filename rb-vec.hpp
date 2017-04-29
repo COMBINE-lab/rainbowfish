@@ -17,18 +17,10 @@
 
 class RBVec {
 	private:
-			bool hasSelect;
+			bool hasSelect_;
 			sdsl::bit_vector bitvec_;
-			//sdsl::select_support_mcl<1,1>* selbitvec_{nullptr};
 			rank9sel* selbitvec_{nullptr};
-			//sdsl::select_support* selbitvec_{nullptr};
-			//boost::dynamic_bitset<> bitvec_;
-			boost::dynamic_bitset<> readBitset(std::string infileName);
 			size_t bvsize_;
-			//BitmapPoppy* bitselvec{nullptr};
-			//BitmapPoppy* readRSBitset(std::string infileName);
-			rank9sel* readRSBitset(std::string infileName);
-
 	public:
 			RBVec(std::string fileName, bool hasSelect);
 			RBVec(uint64_t bitSize);
@@ -44,12 +36,11 @@ class RBVec {
 class RBVecCompressed {
 	using compressed_vec = sdsl::rrr_vector<15, sdsl::int_vector<>, 8>;
 	private:
-			bool hasSelect;
+			bool hasSelect_;
 			size_t bvsize_;
 			sdsl::bit_vector bitvec_;
 			compressed_vec rrr_bitvec_;
 			decltype(rrr_bitvec_)::select_1_type selbitvec_;
-			//sdsl::rrr_vector<63, sdsl::int_vector<>, 8> readRSbitset(std::string fileName);
 	public:
 			RBVecCompressed(std::string fileName, bool hasSelect);
 			RBVecCompressed(uint64_t bitSize);
