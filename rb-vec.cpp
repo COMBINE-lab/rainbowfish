@@ -3,12 +3,18 @@
 
 RBVec::RBVec(std::string fileName, bool hasSelect) {
 		this->hasSelect = hasSelect;
-		if (!hasSelect) bitvec_ = readBitset(fileName+VEC_EXT);
-		else selbitvec_ = readRSBitset(fileName+VEC_EXT);
+		//if (!hasSelect) bitvec_ = readBitset(fileName+VEC_EXT);
+		//else selbitvec_ = readRSBitset(fileName+VEC_EXT);
+	
+		sdsl::load_from_file(bitvec_, fileName+VEC_EXT);
+		if (hasSelect)
+			selbitvec_ = new rank9sel(bitvec_.data(), bitvec_.size());
+
 }
 
 RBVec::RBVec(uint64_t bitSize) {
-		boost::dynamic_bitset<> tmp_bitvec(bitSize);
+		//boost::dynamic_bitset<> tmp_bitvec(bitSize);
+		sdsl::bit_vector tmp_bitvec(bitSize);
 		bitvec_ = tmp_bitvec;
 }
 
@@ -19,7 +25,8 @@ bool RBVec::operator[](uint64_t idx) const {
 
 //TODO will get so slow if I set if/else for bitvec vs bitselvec
 void RBVec::set(uint64_t idx) {
-	bitvec_.set(idx);
+	//bitvec_.set(idx);
+	bitvec_[idx] = 1;
 }
 
 // will just return a valid number if hasSelect is true
@@ -32,15 +39,16 @@ uint64_t RBVec::select(uint64_t rnk) {
 uint64_t RBVec::getInt(uint64_t offset, uint64_t bitLen) {
 	uint64_t inted = 0;
 	//assumption: labels are put in A from least significant digit to most (e.g. label = 4 is put in A in the order 001)
-	for (uint64_t ctr = 0; ctr < bitLen; ctr++) {
+/*	for (uint64_t ctr = 0; ctr < bitLen; ctr++) {
 		inted |= (bitvec_[offset+ctr] << ctr);
 	}
+*/	inted = bitvec_.get_int(offset, bitLen);
 	return inted;
 }
 
 bool RBVec::serialize(std::string fileName) {
 	fileName = fileName + VEC_EXT;
-	std::ofstream out(fileName, std::ios::out | std::ios::binary);
+/*	std::ofstream out(fileName, std::ios::out | std::ios::binary);
 	int bitctr{7};
 	unsigned char byte{0};
 	size_t bs_size = bitvec_.size();
@@ -60,6 +68,8 @@ bool RBVec::serialize(std::string fileName) {
 	}
 	out.close();
 	return true;
+	*/
+	return sdsl::store_to_file(bitvec_, fileName);
 }
 
 boost::dynamic_bitset<> RBVec::readBitset(std::string infileName){

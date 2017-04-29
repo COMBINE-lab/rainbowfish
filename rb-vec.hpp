@@ -17,7 +17,8 @@
 class RBVec {
 	private:
 			bool hasSelect;
-			boost::dynamic_bitset<> bitvec_;
+			sdsl::bit_vector bitvec_;
+			//boost::dynamic_bitset<> bitvec_;
 			boost::dynamic_bitset<> readBitset(std::string infileName);
 			//BitmapPoppy* bitselvec{nullptr};
 			//BitmapPoppy* readRSBitset(std::string infileName);
