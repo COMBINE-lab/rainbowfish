@@ -135,8 +135,8 @@ uint64_t RBVecCompressed::getInt(uint64_t offset, uint64_t bitLen) {
 }
 
 bool RBVecCompressed::setInt(uint64_t offset, uint64_t num, uint8_t bitlen) {
-	std::cerr << "not implemented yet";
-	return false;
+	bitvec_.set_int(offset, num, bitLen);
+	return true;
 }
 
 // compresses bitvector into rrr_vector and serializes it
