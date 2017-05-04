@@ -115,9 +115,14 @@ class ColorPacker {
 
 			size_t insertColorLabel(uint64_t num, uint64_t pos) {
 				// most significant bit of number goes down to the end of the bitset
-				uint8_t nbits = static_cast<uint8_t>(num==0?1:ceil(log2(num+1)));
+				uint8_t nbits = log2(num+2);
+			    uint64_t lbl = num - (1<<nbits - 2);
+				lblvec.setInt(pos, lbl, nbits);
+				return pos + nbits;
+				/*uint8_t nbits = static_cast<uint8_t>(num==0?1:ceil(log2(num+1)));
 				lblvec.setInt(pos, num, nbits);
 				return pos + nbits;
+				*/
 			}
 			
 			bool storeAll(std::string dir, uint64_t bitvecSize, uint64_t eqClsSize) {
