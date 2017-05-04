@@ -15,12 +15,16 @@
 #include "rb-query.hpp"
 
 #include <sys/timeb.h>
+#include <random>
+
+#include "cereal/archives/json.hpp"
 
 struct parameters_t {
   std::string input_filename = "";
   std::string color_filename = "";
   std::string res_dir = "";
   std::string bvs_type = "";
+  std::string validation_type = "";
 };
 
 
@@ -45,21 +49,27 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   TCLAP::UnlabeledValueArg<std::string> input_filename_arg("input", ".dbg file.", true, "", "graph_file", cmd);
   TCLAP::UnlabeledValueArg<std::string> color_filename_arg("color", ".rrr file.", true, "", "color_file", cmd);
     TCLAP::UnlabeledValueArg<std::string> res_dir_arg("dir", "Result directory. Should have created the directory first.", true, "", "res_dir", cmd);
-    TCLAP::UnlabeledValueArg<std::string> bitvectors_type_arg("bv_type","format is like ccc, uuu, ucc, .. c=compressed, u=uncompressed. order = label, rank, eqTable", true, "", "bv_type", cmd);
-	
+    TCLAP::UnlabeledValueArg<std::string> bitvectors_type_arg("bv_type","format is like ccc, uuu, ucc, .. c=compressed, u=uncompressed. order = label, rank, eqTable", true, "", "bv_type", cmd);	
+    TCLAP::UnlabeledValueArg<std::string> validation_type_arg("validation_type","Validation Type: Accepted values:compare, query, random-query, cosmo-query", true, "", "validation_type", cmd);
   cmd.parse( argc, argv );
 
   params.input_filename  = input_filename_arg.getValue();
   params.color_filename  = color_filename_arg.getValue();
   params.res_dir		 = res_dir_arg.getValue();
   params.bvs_type = bitvectors_type_arg.getValue();
+  params.validation_type = validation_type_arg.getValue();
 }
 
-void deserialize_info(uint64_t* num_colors, uint64_t* num_edges, std::string res_dir) {
-	std::ifstream infile(res_dir+"/info", std::ios::binary);
-	infile.read(reinterpret_cast<char*>(num_colors), sizeof(*num_colors));
-	infile.read(reinterpret_cast<char*>(num_edges), sizeof(*num_edges));
-	infile.close();
+void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res_dir) {
+
+	std::string jsonFileName = res_dir + "/info.json";
+	std::ifstream jsonFile(jsonFileName);
+	{	
+		cereal::JSONInputArchive archive(jsonFile);
+		archive(cereal::make_nvp("num_colors", num_colors));
+		archive(cereal::make_nvp("num_edges", num_edges));
+	}
+	jsonFile.close();
 }
 
 class MainBase {
@@ -86,7 +96,7 @@ class MainTemplatized : public MainBase {
 					load_from_file(colors, p.color_filename);
 					uint64_t num_colors = 0;
 					uint64_t num_edges = 0;
-					deserialize_info(&num_colors, &num_edges, p.res_dir);
+					deserialize_info(num_colors, num_edges, p.res_dir);
 					cerr << "k             : " << dbg.k << endl;
 					cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
 					cerr << "num_edges()   : " << dbg.num_edges() << " or " << num_edges <<  endl;
@@ -95,29 +105,21 @@ class MainTemplatized : public MainBase {
 					cerr << "Bits per edge : " << bits_per_element(dbg) << " Bits" << endl;
 
 				  std::string res_dir = p.res_dir;
-				//  ColorDetector<RBVecCompressed, RBVecCompressed, RBVecCompressed> cd(res_dir, num_colors);
-				//  ColorDetector<RBVec, RBVec, RBVec> cd(res_dir, num_colors);
-				
 				  ColorDetector<T1, T2, T3> cd(res_dir, num_colors);
 				  uint64_t checkPointTime = getMilliCount();
-				  
-				//  std::cerr<<"******* RBVECCOMPRESSED, RBVECCOMPRESSED, RBVECCOMPRESSED *******\n";
-				// std::cerr<<"******* RBVEC, RBVEC, RBVEC *******\n";
-				//  std::cerr<<"******* RBVEC, RBVECCOMPRESSED, RBVECCOMPRESSED *******\n";
-/*				
-				  uint64_t startTime = getMilliCount();
-				  uint64_t rbsum = 0;
-				  uint64_t cosmosum = 0;
-				  bool allTheSame = true;
-				  for (uint64_t edge = 0; edge < num_edges; edge++) {
+				
+				  if (p.validation_type == "compare") {
+				  	uint64_t startTime = getMilliCount();
+				  	uint64_t rbsum = 0;
+				  	uint64_t cosmosum = 0;
+				  	bool allTheSame = true;
+					for (uint64_t edge = 0; edge < num_edges; edge++) {
 					   bool first = true;
 					   for (size_t c = 0; c < num_colors; c++) {			 			   
 							 short rb = cd.contains(c, edge);
 							 short cosmo = colors[edge*num_colors+c];
 							 rbsum += rb;
 							 cosmosum += cosmo;
-							 //std::cout << cd.contains(c, edge) << "," << colors[edge*num_colors+c] << " ";
-				//			 if (cd.contains(c, edge) != colors[edge * num_colors + c]) {
 							 if (rb != cosmo) {
 									 allTheSame = false;
 									 if (first) {
@@ -126,9 +128,7 @@ class MainTemplatized : public MainBase {
 									 }
 									 std::cout << "c"<<c << ":" << cd.contains(c, edge) << "," << colors[edge*num_colors+c] << " ";
 							 }
-							 //if (edge < 100) std::cerr<<cd.contains(c, edge);
 					   }
-					   //if (edge < 100) std::cerr<<" ";
 					   if (!first) std::cout << "\n";
 					   if (edge % 100000 == 0) {
 							   std::cerr << getMilliSpan(checkPointTime) << " ms : " << edge << " out of " << num_edges << " edges were compared.\n";
@@ -139,29 +139,60 @@ class MainTemplatized : public MainBase {
 				  std::cerr << "\n\n" << getMilliSpan(startTime) << " ms : Time for total of " << num_edges * num_colors << " comparisons.\n";  
 				  if (allTheSame) std::cerr<<" HURRAAAAY! Validation Test Passed.\n";
 				  else std::cerr<<"NOT GOOD! Validation Test Failed.\n";
-*/				
-				  bool temp;
-				  uint64_t totalsetbit = 0;
-				  uint64_t rainbow_st = getMilliCount();
-				  checkPointTime = getMilliCount();
-				  for (uint64_t edge = 0; edge < num_edges; edge++) {
-					   for (size_t c = 0; c < num_colors; c++) {
-							   temp = cd.contains(c, edge);
-							   totalsetbit += temp;
-					   }
-					   if (edge % 10000000 == 0) {
-							   std::cerr << "rb " << getMilliSpan(checkPointTime)/1000 << " s : " << edge << " of " << num_edges << "\n";
-							   cd.printStatistics();
-							   checkPointTime = getMilliCount();
-					   }
-				  }
-				  std::cerr<<"\n\n\n";
-				  rainbow_st = getMilliSpan(rainbow_st);
-				  std::cerr << "\n\n Total of " << num_edges * num_colors << " comparisons with "<<totalsetbit<<" set bits:\n";
-				  std::cerr << "		" << rainbow_st << " ms : RAINBOWFISH\n";
-				  cd.printStatistics();
-			
-/*		  uint64_t vari_st = getMilliCount();
+				  }		
+				  if (p.validation_type == "query" || p.validation_type == "random-query") {
+						  bool temp;
+						  uint64_t totalsetbit = 0;
+						  uint64_t rainbow_st = getMilliCount();
+						  checkPointTime = getMilliCount();
+						  if (p.validation_type == "random-query") {
+								std::random_device rd;
+								std::mt19937_64 gen(rd());
+								std::uniform_int_distribution<unsigned long long> dis;
+								uint64_t *edgeIdx = new uint64_t[num_edges];
+								uint64_t *colorIdx = new uint64_t[num_colors];
+						  		for (uint64_t edge = 0; edge < num_edges; edge++) {
+									edgeIdx[edge] = dis(gen)%num_edges;
+							   }
+									for (size_t c = 0; c < num_colors; c++) {
+											colorIdx[c] = rand() % num_colors;
+									}
+
+
+							   for (uint64_t edge = 0; edge < num_edges; edge++) {
+							   for (size_t c = 0; c < num_colors; c++) {
+									   temp = cd.contains(colorIdx[c], edgeIdx[edge]);
+									   totalsetbit += temp;
+							   }
+							   
+							   if (edge % 10000000 == 0) {
+									 std::cerr << "rb " << getMilliSpan(checkPointTime)/1000 << " s : " << edge << " of " << num_edges << "\n";
+									 checkPointTime = getMilliCount();
+							   }
+									 //  std::cerr << "rb " << getMilliSpan(checkPointTime)/1000 << " s : " <<  num_edges << " for color " <<c< "\n";
+									  // checkPointTime = getMilliCount();
+							  // }
+						  	  }
+						  }
+						  for (uint64_t edge = 0; edge < num_edges; edge++) {
+							   for (size_t c = 0; c < num_colors; c++) {
+									   temp = cd.contains(c, edge);
+									   totalsetbit += temp;
+							   }
+							   if (edge % 10000000 == 0) {
+									   std::cerr << "rb " << getMilliSpan(checkPointTime)/1000 << " s : " << edge << " of " << num_edges << "\n";
+									   //cd.printStatistics();
+									   checkPointTime = getMilliCount();
+							   }
+						  }
+						  std::cerr<<"\n\n\n";
+						  rainbow_st = getMilliSpan(rainbow_st);
+						  std::cerr << "\n\n Total of " << num_edges * num_colors << " comparisons with "<<totalsetbit<<" set bits:\n";
+						  std::cerr << "		" << rainbow_st << " ms : RAINBOWFISH\n";
+						  cd.printStatistics();
+				 }
+		if (p.validation_type == "cosmo-query") {			
+		  uint64_t vari_st = getMilliCount();
 				  uint64_t totalsetbit = 0;
 				  bool temp;
 		  checkPointTime = getMilliCount();
@@ -180,7 +211,7 @@ class MainTemplatized : public MainBase {
 		  std::cerr << "\n\n Total of " << num_edges * num_colors << " comparisons with "<<totalsetbit<<" set bits:\n";
 		  //std::cerr << "		" << rainbow_st << " ms : RAINBOWFISH\n";
 		  std::cerr << "		" << vari_st << " ms : VARI\n";
-*/		
+		}
 	}			
 };
 
