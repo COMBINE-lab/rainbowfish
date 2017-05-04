@@ -20,6 +20,7 @@
 
 #include <sys/timeb.h>
 
+#include "cereal/archives/json.hpp"
 int getMilliCount(){
   timeb tb;
   ftime(&tb);
@@ -58,11 +59,16 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   params.res_dir		 = res_dir_arg.getValue();
   params.bvs_type         = bitvectors_type_arg.getValue();
 }
-void deserialize_info(uint64_t* num_colors, uint64_t* num_edges, std::string res_dir) {
-	std::ifstream infile(res_dir+"/info", std::ios::binary);
-	infile.read(reinterpret_cast<char*>(num_colors), sizeof(*num_colors));
-	infile.read(reinterpret_cast<char*>(num_edges), sizeof(*num_edges));
-	infile.close();
+void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res_dir) {
+	
+	std::string jsonFileName = res_dir + "/info.json";
+	std::ifstream jsonFile(jsonFileName);
+	{	
+		cereal::JSONInputArchive archive(jsonFile);
+		archive(cereal::make_nvp("num_colors", num_colors));
+		archive(cereal::make_nvp("num_edges", num_edges));
+	}
+	jsonFile.close();
 }
 static char base[] = {'?','A','C','G','T'};
 
@@ -229,7 +235,7 @@ class MainTemplatized : public MainBase {
   cerr << "loading colors" << std::endl;
   uint64_t num_colors = 0;
   uint64_t num_edges = 0;
-  deserialize_info(&num_colors, &num_edges, p.res_dir);
+  deserialize_info(num_colors, num_edges, p.res_dir);
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
   cerr << "num_edges()   : " << dbg.num_edges() << " or " << num_edges << endl;

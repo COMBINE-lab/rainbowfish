@@ -15,19 +15,11 @@ ColorDetector<T1, T2, T3>::ColorDetector(std::string dir, uint64_t colorCnt) :
 template <class T1, class T2, class T3>
 bool ColorDetector<T1, T2, T3>::prevContains_(unsigned int color) {
 	//uint64_t st = getMilliCountt();
-	//bool res = eqT[colorCnt_*prevColor_+color];
-	uint64_t mask = 1;
-/*	if (color == 143) {
-	for (uint64_t c = 0; c < colorCnt_; c++) {i
-			if (eqT[colorCnt_*prevColor_+c] == 1) std::cout<<c<<",";			
-	}
-	std::cout<<"\n"<<prevColorVal_[color/64]<<" "<<(bool)(prevColorVal_[color/64] & (mask<<(color % 64)));
-	abort();
-	}*/
-	bool res1 = prevColorVal_[color / 64] & (mask<<(color % 64));
-	//if (res != res1) std::cout <<color<<":"<< res << "," << res1 << "  ";
+	bool res = eqT[colorCnt_*prevColor_+color];
+	//uint64_t mask = 1;
+	//bool res1 = prevColorVal_[color / 64] & (mask<<(color % 64));
 	//getColor_t += getMilliSpant(st);
-	return res1;
+	return res;
 }
 
 inline int64_t bitscanforward(uint64_t val)
@@ -78,9 +70,9 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	prevColor_ = colorIdx;
 	//st = getMilliCountt();
 	bool res = eqT[colorCnt_*colorIdx+color];
-	for (uint64_t c=0, cntr=0; c<colorCnt_; c+=64,cntr++) {
+	/*for (uint64_t c=0, cntr=0; c<colorCnt_; c+=64,cntr++) {
 		prevColorVal_[cntr] = eqT.getInt(colorCnt_*colorIdx+c, std::min((int)(colorCnt_-c), 64));
-	}
+	}*/
 	//getColor_t += getMilliSpant(st);
 	return res;
 }
