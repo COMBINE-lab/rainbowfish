@@ -29,12 +29,14 @@ First of all create a directory in which you want to store all bitvectors (label
 The current queries we can run on newton are as follows (here we run it for 1000 colors):
 1. pack colors using the color file created by cosmo and save them in hard disc:
 
-LD_LIBRARY_PATH=/home/rob/cosmo/3rd_party_inst/lib gdb --args ~/projects/cosmo/rb-pack-color kmc2_list_1000.colors 1000 \<Address to bitvector dir\>
+LD_LIBRARY_PATH=/home/rob/cosmo/3rd_party_inst/lib gdb --args ~/projects/cosmo/rb-pack-color kmc2_list_1000.colors 1000 \<Address to bitvector dir\> <1pass/2pass>
+
 2. validating our query of (color & edge) vs VARI's:
 
 LD_LIBRARY_PATH=/home/rob/cosmo/3rd_party_inst/lib ~/projects/cosmo/rb-validate kmc2_list_1000.dbg kmc2_list_1000.colors.sd_vector \<Address to bitvector dir\> <validation-type> > rb-validate 
 
 validation-type should be one of the following words : compare (to compare results with cosmo), query (to go over all pairs of edge/color sequentially), cosmo-query (to go over all pairs of edge/color on cosmo data structure), or random-query (to go over a random pair of edge/color)
+
 3. find bubbles:
 
 LD_LIBRARY_PATH=/home/rob/cosmo/3rd_party_inst/lib ~/projects/cosmo/rb-find-bubble kmc2_list_1000.dbg kmc2_list_1000.colors.sd_vector \<Address to bitvector dir\> > rb-bubbles

@@ -11,6 +11,7 @@ typedef struct p
     unsigned long long n;
     std::string output_prefix = "";
     std::string res_dir= "";
+	std::string pass="";
 } parameters_t;
 
 

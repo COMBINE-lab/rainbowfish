@@ -29,12 +29,12 @@ class RBVec {
 			uint64_t select(uint64_t rnk);
 			uint64_t getInt(uint64_t offset, uint64_t bitLen);
 			bool setInt(uint64_t offset, uint64_t num, uint8_t bitlen);
-			bool serialize(std::string fileName);
+			bool serialize(std::string fileName, uint64_t finalSize);
 			//uint64_t getNextOne(uint64_t offset);
 };
 
 class RBVecCompressed {
-	using compressed_vec = sdsl::rrr_vector<15, sdsl::int_vector<>, 8>;
+	using compressed_vec = sdsl::rrr_vector<63>;
 	private:
 			bool hasSelect_;
 			size_t bvsize_;
@@ -49,7 +49,7 @@ class RBVecCompressed {
 			uint64_t select(uint64_t rnk);
 			uint64_t getInt(uint64_t offset, uint64_t bitLen);
 			bool setInt(uint64_t offset, uint64_t num, uint8_t bitlen);
-			bool serialize(std::string fileName);
+			bool serialize(std::string fileName, uint64_t finalSize);
 			//uint64_t getNextOne(uint64_t offset);
 
 };

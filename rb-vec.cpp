@@ -7,6 +7,7 @@ RBVec::RBVec(std::string fileName, bool hasSelect) {
 		if (hasSelect)
 			selbitvec_ = new rank9sel(bitvec_.data(), bitvec_.size());
 		bvsize_ = bitvec_.size();
+	  	std::cerr << fileName+VEC_EXT << " -- size " << bitvec_.size() <<std::endl;
 }
 
 RBVec::RBVec(uint64_t bitSize) {
@@ -20,7 +21,7 @@ bool RBVec::operator[](uint64_t idx) const {
 
 //TODO will get so slow if I set if/else for bitvec vs bitselvec
 void RBVec::set(uint64_t idx) {
-	//bitvec_.set(idx);
+	if (bitvec_.size() <= idx) bitvec_.resize((uint64_t)(bitvec_.size()*1.5));
 	bitvec_[idx] = 1;
 }
 
@@ -37,12 +38,15 @@ uint64_t RBVec::getInt(uint64_t offset, uint64_t bitLen) {
 }
 
 bool RBVec::setInt(uint64_t offset, uint64_t num, uint8_t bitlen) {
+	if (bitvec_.size() <= offset+bitlen-1) bitvec_.resize((uint64_t)(bitvec_.size()*1.5));
 	bitvec_.set_int(offset, num, bitlen);
 	return true;
 }
 
-bool RBVec::serialize(std::string fileName) {
+bool RBVec::serialize(std::string fileName, uint64_t finalSize) {
 	fileName = fileName + VEC_EXT;
+	if (finalSize != bitvec_.size()) bitvec_.resize(finalSize);
+	std::cerr << fileName << " -- size " << bitvec_.size() <<std::endl;
 	return sdsl::store_to_file(bitvec_, fileName);
 }
 
@@ -119,7 +123,8 @@ bool RBVecCompressed::operator[](uint64_t idx) const {
 //TODO ask Rob about the inconsistnecy of set and []
 // sets bitvector value at position idx (cannot change rrr_vector values, so we have to assume, set is requested for uncompressed bitvector)
 void RBVecCompressed::set(uint64_t idx) {
-		bitvec_[idx] = 1;
+	if (bitvec_.size() <= idx) bitvec_.resize((uint64_t)(bitvec_.size()*1.5));
+	bitvec_[idx] = 1;
 }
 
 //Assume that it is just called when hasSelect is set
@@ -135,13 +140,15 @@ uint64_t RBVecCompressed::getInt(uint64_t offset, uint64_t bitLen) {
 }
 
 bool RBVecCompressed::setInt(uint64_t offset, uint64_t num, uint8_t bitlen) {
+	if (bitvec_.size() <= offset+bitlen-1) bitvec_.resize((uint64_t)(bitvec_.size()*1.5));
 	bitvec_.set_int(offset, num, bitlen);
 	return true;
 }
 
 // compresses bitvector into rrr_vector and serializes it
-bool RBVecCompressed::serialize(std::string fileName) {
-	fileName = fileName+COMPRESSEDVEC_EXT;	
+bool RBVecCompressed::serialize(std::string fileName, uint64_t finalSize) {
+	fileName = fileName+COMPRESSEDVEC_EXT;
+	if (finalSize != bitvec_.size()) bitvec_.resize(finalSize);
 	compressed_vec rrr_bitvec(bitvec_);
   	std::cerr << fileName << " -- size " << rrr_bitvec.size() <<std::endl;
 	return sdsl::store_to_file(rrr_bitvec, fileName);
