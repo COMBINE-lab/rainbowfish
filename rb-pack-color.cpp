@@ -157,9 +157,8 @@ int main(int argc, char * argv[])
 	//FIRST ROUND going over all edges
 	// Read file and fill out equivalence classes
     std::cerr << "edges: " << num_edges << " colors: " << num_color << " Total: " << num_edges * num_color << std::endl;
-    sparse_hash_map<color_bv, int> eqCls;
-    std::vector<std::pair<color_bv, int>> eqClsVec;
-    //bool first = true;
+    sparse_hash_map<color_bv, uint64_t> eqCls;
+    std::vector<std::pair<color_bv, uint64_t>> eqClsVec;
 //	ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed> * cp;
 	ColorPacker<RBVec, RBVec, RBVec> * cp;
 	uint64_t curPos = 0;
@@ -184,7 +183,7 @@ int main(int argc, char * argv[])
 			for (const auto& c : eqCls) { eqClsVec.push_back(c); }	
 			
 			// sort the hashmap
-			auto cmp = [](std::pair<color_bv, int> const & a, std::pair<color_bv, int> const & b) 
+			auto cmp = [](std::pair<color_bv, uint64_t> const & a, std::pair<color_bv, uint64_t> const & b) 
 			{	 
 				return a.second > b.second;
 			};
@@ -195,10 +194,10 @@ int main(int argc, char * argv[])
 			size_t totalBits = 0;
 			uint64_t total_edges = 0;
 			for (const auto& c : eqClsVec) {
-				std::cout <<"cls"<<lbl<< ", "<< c.second<<": ";
+				std::cout <<lbl<< ","<< c.second<<"\n ";
 				total_edges += c.second;
-				for (uint64_t k=0;k<num_color;k++) if (c.first[k] == true) std::cout<<k<<" ";
-				std::cout<<"\n";
+				//for (uint64_t k=0;k<num_color;k++) if (c.first[k] == true) std::cout<<k<<" ";
+				//std::cout<<"\n";
 				totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
 				eqCls[c.first] = lbl++;
 			}
@@ -219,7 +218,7 @@ int main(int argc, char * argv[])
 			// create label & rank vectors
 			colorfile.seekg(0, colorfile.beg);
 			for (size_t i=0; i < num_edges; i++) {
-				if (i % 100000000/*1000000*/ == 0) {
+				if (i % 100000000 == 0) {
 						std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<std::endl;
 						checkPointTime = getMilliCount();
 				}
@@ -227,8 +226,6 @@ int main(int argc, char * argv[])
 				deserialize_color_bv(colorfile, value);
 				(cp->rnkvec).set(curPos);
 				curPos = cp->insertColorLabel(eqCls[value], curPos);
-				// if we want to set the end, here we should say b.set(curPos-1);
-				// TODO if for last edge we need an extra 1 we should have 1 extra bit at the end of the vector and set it here
 			}
 			(cp->rnkvec).set(curPos);
 			std::cerr << "\n" << getMilliSpan(packStartTime) << " ms : Packing label & rank into bitvector." << std::endl;
@@ -242,7 +239,7 @@ int main(int argc, char * argv[])
 		cp = new ColorPacker<RBVec, RBVec, RBVec>(num_color*num_color, 2*num_edges*num_color);
 
 		for (size_t i=0; i < num_edges; i++) {
-				if (i % 100000000/*1000000*/ == 0) {
+				if (i % 100000000 == 0) {
 						std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<std::endl;
 						checkPointTime = getMilliCount();
 				}
@@ -254,8 +251,6 @@ int main(int argc, char * argv[])
 				}
 				(cp->rnkvec).set(curPos);
 				curPos = cp->insertColorLabel(eqCls[value], curPos);
-				// if we want to set the end, here we should say b.set(curPos-1);
-				// TODO if for last edge we need an extra 1 we should have 1 extra bit at the end of the vector and set it here
 			}
 			(cp->rnkvec).set(curPos);
 			std::cerr << "\n" << getMilliSpan(packStartTime) << " ms : Packing label & rank into bitvector." << std::endl;	
