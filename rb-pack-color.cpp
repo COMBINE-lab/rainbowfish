@@ -115,8 +115,8 @@ class ColorPacker {
 
 			size_t insertColorLabel(uint64_t num, uint64_t pos) {
 				// most significant bit of number goes down to the end of the bitset
-				uint8_t nbits = log2(num+2);
-			    uint64_t lbl = num - (1<<nbits - 2);
+				uint8_t nbits = static_cast<uint8_t>(floor(log2(num+2)));
+			    uint64_t lbl = num - ((1<<nbits) - 2);
 				lblvec.setInt(pos, lbl, nbits);
 				return pos + nbits;
 				/*uint8_t nbits = static_cast<uint8_t>(num==0?1:ceil(log2(num+1)));

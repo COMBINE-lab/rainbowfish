@@ -65,7 +65,7 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	/** Alternative bitscan forward **/
 
 	uint64_t colorIdx = A.getInt(start, end-start);
-	colorIdx = colorIdx + (1<<(end-start)-2);
+	colorIdx = colorIdx + ((1<<(end-start))-2);
 	//getInt_t += getMilliSpant(st);
 	prevEdge_ = edge;
 	prevColor_ = colorIdx;

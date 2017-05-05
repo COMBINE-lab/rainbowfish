@@ -116,6 +116,7 @@ class MainTemplatized : public MainBase {
 					for (uint64_t edge = 0; edge < num_edges; edge++) {
 					   bool first = true;
 					   for (size_t c = 0; c < num_colors; c++) {			 			   
+
 							 short rb = cd.contains(c, edge);
 							 short cosmo = colors[edge*num_colors+c];
 							 rbsum += rb;
@@ -130,7 +131,7 @@ class MainTemplatized : public MainBase {
 							 }
 					   }
 					   if (!first) std::cout << "\n";
-					   if (edge % 100000 == 0) {
+					   if (edge % 10000000 == 0) {
 							   std::cerr << getMilliSpan(checkPointTime) << " ms : " << edge << " out of " << num_edges << " edges were compared.\n";
 							   checkPointTime = getMilliCount();
 					   }
