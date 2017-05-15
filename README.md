@@ -30,7 +30,7 @@ To compare rb results with VARI you need to run "pack-color" command from VARI t
 
 rb-pack-color kmc2_list_1000.colors 1000 \<Address to bitvector dir\> <1pass/2pass>
 
-2. validating our query of (color & edge) vs VARI's:
+3. validating our query of (color & edge) vs VARI's:
 
 rb-validate kmc2_list_1000.dbg kmc2_list_1000.colors.sd_vector \<Address to bitvector dir\> <validation-type> > rb-validate 
 
@@ -40,7 +40,7 @@ validation-type should be one of the following words :
 * cosmo-query (to go over all pairs of edge/color on cosmo data structure),
 * random-query (to go over a random pair of edge/color)
 
-3. find bubbles:
+4. find bubbles:
 
 rb-find-bubble kmc2_list_1000.dbg kmc2_list_1000.colors.sd_vector \<Address to bitvector dir\> > rb-bubbles
 
