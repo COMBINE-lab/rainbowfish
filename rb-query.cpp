@@ -2,8 +2,14 @@
 #include "rb-query.hpp"
 
 template <class T1, class T2, class T3>
-ColorDetector<T1, T2, T3>::ColorDetector(std::string dir, uint64_t colorCnt) :
-		A(dir + "/lbl", false), b(dir + "/rnk", true), eqT(dir + "/eqTable", false) {
+ColorDetector<T1, T2, T3>::ColorDetector(std::string dir, uint64_t colorCnt, bool isLblDynamicLength, uint64_t lblFixedLength) {
+	A = T1(dir + "/lbl", false);
+	isDynamicLblLength_ = isLblDynamicLength;
+	lblFixedLength_ = lblFixedLength;
+	if (isDynamicLblLength_) { 
+		b = T2(dir + "/rnk", true); 
+	}
+	eqT = T3(dir + "/eqTable", false);
 	colorCnt_ = colorCnt;
 	prevEdge_=std::numeric_limits<uint64_t>::max();
 	select_t = 0;
@@ -39,33 +45,40 @@ inline int64_t bitscanforward(uint64_t val)
 template <class T1, class T2, class T3>
 bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	if (edge == prevEdge_) { return prevContains_(color); }
-	uint64_t start = b.select(edge);
-	uint64_t next = b.getInt(start, 64);
-	if (!(next & 0x0000000000000001)) {
-		std::cerr << "lowest bit should always be set!\n";
+	uint64_t colorIdx = 0;
+	if (isDynamicLblLength_) {
+			uint64_t start = b.select(edge);
+			//if (start > 83381100)
+			//std::cerr<<edge<<" : "<<start<<"\n";				
+			uint64_t next = b.getInt(start, 64);
+			if (!(next & 0x0000000000000001)) {
+				std::cerr << "lowest bit should always be set!\n";
+			}
+			//next = (next & 0x7FFFFFFFFFFFFFFF);
+			next = (next & 0xFFFFFFFFFFFFFFFE);
+			//std::cerr << "after\n";
+			auto nzero = __builtin_ctzll(next);
+			uint64_t end = start + nzero;
+			//uint64_t end = b.select(edge+1);
+			/*uint64_t end_check = b.select(edge+1);//todo: what if the edge is the last one?
+			if (end != end_check) {
+				std::cerr << "start = " << start << ", end with __builtin_clz = " << end << ", but with select = " << end_check << "\n";
+			}*/
+
+			/** Alternative bitscan forward **/
+			/*
+			//uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
+			uint64_t next_word = b.getInt(start+1, 64);
+			uint64_t len = bitscanforward(next_word); 
+			*/
+			/** Alternative bitscan forward **/
+
+			colorIdx = A.getInt(start, end-start);
+			colorIdx = colorIdx + ((1<<(end-start))-2);
 	}
-	//next = (next & 0x7FFFFFFFFFFFFFFF);
-	next = (next & 0xFFFFFFFFFFFFFFFE);
-	//std::cerr << "after\n";
-	auto nzero = __builtin_ctzll(next);
-	uint64_t end = start + nzero;
-	
-	//uint64_t end = b.select(edge+1);
-	/*uint64_t end_check = b.select(edge+1);//todo: what if the edge is the last one?
-	if (end != end_check) {
-		std::cerr << "start = " << start << ", end with __builtin_clz = " << end << ", but with select = " << end_check << "\n";
-	}*/
-
-	/** Alternative bitscan forward **/
-	/*
-	//uint64_t end = b.select(edge+1);//todo: what if the edge is the last one?
-	uint64_t next_word = b.getInt(start+1, 64);
-	uint64_t len = bitscanforward(next_word); 
-	*/
-	/** Alternative bitscan forward **/
-
-	uint64_t colorIdx = A.getInt(start, end-start);
-	colorIdx = colorIdx + ((1<<(end-start))-2);
+	else {
+			colorIdx = A.getInt(edge*lblFixedLength_, lblFixedLength_);
+	}
 	//getInt_t += getMilliSpant(st);
 	prevEdge_ = edge;
 	prevColor_ = colorIdx;

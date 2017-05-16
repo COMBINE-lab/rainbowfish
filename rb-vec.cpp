@@ -10,8 +10,25 @@ RBVec::RBVec(std::string fileName, bool hasSelect) {
 	  	std::cerr << fileName+VEC_EXT << " -- size " << bitvec_.size() <<std::endl;
 }
 
+RBVec::~RBVec() {
+		if (selbitvec_) { delete selbitvec_; }
+}
+
 RBVec::RBVec(uint64_t bitSize) {
+		hasSelect_ = false;
 		bitvec_ = sdsl::bit_vector(bitSize);
+		std::cerr << " -- size " << bitvec_.size() << std::endl;
+}
+
+RBVec& RBVec::operator=(const RBVec& other) {
+		hasSelect_ = other.hasSelect_;
+		bitvec_ = other.bitvec_;
+		if (hasSelect_) { 
+				selbitvec_ = new rank9sel(bitvec_.data(), bitvec_.size()); 
+		}
+		bvsize_ = other.bvsize_;		
+		std::cerr << "Ran RBVec operator=\n";
+		return *this;
 }
 
 //TODO implement it for rank9sel
@@ -111,8 +128,22 @@ RBVecCompressed::RBVecCompressed(std::string fileName, bool hasSelect) {
 
 // creates an uncompressed bitvector (to be converted to compressed version later)
 RBVecCompressed::RBVecCompressed(uint64_t bitSize) {
+	hasSelect_ = false;
 	sdsl::bit_vector tmp_bitvec(bitSize);
 	bitvec_ = tmp_bitvec;
+	std::cerr << " -- size " << bitvec_.size() << std::endl;
+}
+
+RBVecCompressed& RBVecCompressed::operator=(const RBVecCompressed& other) {
+		hasSelect_ = other.hasSelect_;
+		bitvec_ = other.bitvec_;
+		rrr_bitvec_ = other.rrr_bitvec_;
+		if (hasSelect_) { 
+				selbitvec_ = decltype(rrr_bitvec_)::select_1_type(&rrr_bitvec_);
+		}
+		bvsize_ = other.bvsize_;		
+		std::cerr << "Ran RBVecCompressed operator=\n";
+		return *this;
 }
 
 // gets the rrr_vector value at position idx

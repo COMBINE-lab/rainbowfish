@@ -34,7 +34,6 @@ using spp::sparse_hash_map;
 #include <bitset>
 #include "rb-vec.hpp"
 
-#define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1))
 
 int getMilliCount()
 {
@@ -84,7 +83,8 @@ bool serialize_info(uint64_t num_colors,
 		    std::string label_type,
 		    std::string select_type,
 		    std::string eqtable_type,
-		    std::string res_dir) {
+		    std::string res_dir,
+			bool isLblDynamic) {
 
 	std::string jsonFileName = res_dir + "/info.json";
 	std::ofstream jsonFile(jsonFileName);
@@ -96,6 +96,8 @@ bool serialize_info(uint64_t num_colors,
 	archive(cereal::make_nvp("num_colors", num_colors));
 	archive(cereal::make_nvp("num_edges", num_edges));
 	archive(cereal::make_nvp("num_eqCls", num_eqCls));
+	archive(cereal::make_nvp("is_label_dynamic", isLblDynamic));
+	archive(cereal::make_nvp("label_fixed_length", LOG2(num_eqCls)+1));
 	}
 	jsonFile.close();
 	return true;
@@ -109,12 +111,12 @@ class ColorPacker {
 			T2 rnkvec;
 			T3 eqTvec;
 	public:
-			ColorPacker(uint64_t eqBitSize, uint64_t lblBitSize) :
-				lblvec(lblBitSize), rnkvec(lblBitSize+1), eqTvec(eqBitSize) {
-				//TODO fillout info file
-				// 	color cnt
-				// 	kmer cnt
-				// 	...
+			ColorPacker(uint64_t eqBitSize, uint64_t lblBitSize, bool isLblDynamic) {
+				lblvec = T1(lblBitSize); 
+				if (isLblDynamic) {
+					rnkvec = T2(lblBitSize+1); 
+				}
+				eqTvec = T3(eqBitSize); 
 			}
 
 			size_t insertColorLabel(uint64_t num, uint64_t pos) {
@@ -128,9 +130,20 @@ class ColorPacker {
 				return pos + nbits;
 				*/
 			}
+
+			size_t insertFixedLengthColorLabel(uint64_t num, uint64_t pos, uint64_t fixedLength) {
+				lblvec.setInt(pos, num, fixedLength);				
+				return pos + fixedLength;
+			}
 			
-			bool storeAll(std::string dir, uint64_t bitvecSize, uint64_t eqClsSize) {
-				return eqTvec.serialize(dir + "/eqTable", eqClsSize) && lblvec.serialize(dir + "/lbl", bitvecSize) && rnkvec.serialize(dir + "/rnk", bitvecSize+1);
+			bool storeAll(std::string dir, uint64_t bitvecSize, uint64_t eqClsSize, bool isLblDynamic) {
+				eqTvec.serialize(dir + "/eqTable", eqClsSize);
+				lblvec.serialize(dir + "/lbl", bitvecSize);
+				if (isLblDynamic) {
+					rnkvec.serialize(dir + "/rnk", bitvecSize+1);
+				}
+				return true;
+				//return eqTvec.serialize(dir + "/eqTable", eqClsSize) && lblvec.serialize(dir + "/lbl", bitvecSize) && rnkvec.serialize(dir + "/rnk", bitvecSize+1);
 			}
 };
 
@@ -140,6 +153,7 @@ int main(int argc, char * argv[])
 	int startTime = getMilliCount();
 	bool sort = true;
 	bool compress = true;
+	bool dynamicLengthLbl = true;
     //std::cerr << "pack-color compiled with supported colors=" << NUM_COLS << std::endl;
     //std::cerr <<"Starting" << std::endl;
     parameters_t params;
@@ -161,7 +175,8 @@ int main(int argc, char * argv[])
     //std::cerr << "sizeof(color_bv): " << sizeof(color_bv) << std::endl;
     size_t num_color = params.num_colors;
     size_t num_edges = end / sizeof(color_bv);
-
+	std::cerr<<"Num Edges: "<<num_edges<<"\n";
+	std::cerr<<"Num Colors: "<<num_color<<"\n";
 	int checkPointTime = getMilliCount();
 	int allocationTime = getMilliCount();
 	//FIRST ROUND going over all edges
@@ -210,38 +225,70 @@ int main(int argc, char * argv[])
 				//for (uint64_t k=0;k<num_color;k++) if (c.first[k] == true) std::cout<<k<<" ";
 				//std::cout<<"\n";
 				//totalBits += (lbl==0?c.second:ceil(log2(lbl+1))*c.second);
-				totalBits += floor(LOG2(lbl+2))*c.second;
+				totalBits += (LOG2(lbl+2)*c.second);
 				eqCls[c.first] = lbl++;
 			}
 			//std::cerr << getMilliSpan(checkPointTime) << " ms : (Sorting eq vector and ) assigning a label to each eq class." << std::endl;
 			//std::cerr << " Total edge vs total edge: "<<total_edges<<" vs "<< num_edges<<"\n";
 			size_t vecBits = totalBits;
 			totalBits *= 2;
-			totalBits += num_color * eqCls.size();
-			std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
-			
-//			cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
-//			cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
-			cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
+			// Choose between two approaches of dynamic or static label length
+			size_t fixedLength = LOG2(eqCls.size()) + 1;
+			size_t labelBitsetLength = num_edges*fixedLength;
+			if ( labelBitsetLength < totalBits) dynamicLengthLbl = false;
+
+			if (dynamicLengthLbl) {
+				std::cerr << "Going with Dynamic Length Label approach ....... \n";
+				totalBits += num_color * eqCls.size();
+				std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
+
+		//			cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
+		//			cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
+					cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits, dynamicLengthLbl);
 
 
-			// SECOND ROUND going over all edges
-			//checkPointTime = getMilliCount();
-			int packStartTime = getMilliCount();
-			// create label & rank vectors
-			colorfile.seekg(0, colorfile.beg);
-			for (size_t i=0; i < num_edges; i++) {
-				if (i % 100000000 == 0) {
-						std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<" out of "<<num_edges<<std::endl;
-						checkPointTime = getMilliCount();
-				}
-				color_bv value;
-				deserialize_color_bv(colorfile, value);
-				(cp->rnkvec).set(curPos);
-				curPos = cp->insertColorLabel(eqCls[value], curPos);
+					// SECOND ROUND going over all edges
+					//checkPointTime = getMilliCount();
+					int packStartTime = getMilliCount();
+					// create label & rank vectors
+					colorfile.seekg(0, colorfile.beg);
+					for (size_t i=0; i < num_edges; i++) {
+						if (i % 100000000 == 0) {
+								std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<" out of "<<num_edges<<std::endl;
+								checkPointTime = getMilliCount();
+						}
+						color_bv value;
+						deserialize_color_bv(colorfile, value);
+						(cp->rnkvec).set(curPos);
+						curPos = cp->insertColorLabel(eqCls[value], curPos);
+					}
+					(cp->rnkvec).set(curPos);
 			}
+			else {
+				std::cerr << "Going with Fixed Length Labels ....... \n";
+				totalBits = labelBitsetLength + (num_color * eqCls.size());
+				std::cerr << "total bits: " << totalBits << " or " << totalBits/(8*pow(1024,2)) << " MB\n";
 
-			(cp->rnkvec).set(curPos);
+	//			cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
+	//			cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
+				cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, labelBitsetLength, dynamicLengthLbl);
+
+
+				// SECOND ROUND going over all edges
+				//checkPointTime = getMilliCount();
+				int packStartTime = getMilliCount();
+				// create label & rank vectors
+				colorfile.seekg(0, colorfile.beg);
+				for (size_t i=0; i < num_edges; i++) {
+					if (i % 100000000 == 0) {
+							std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<" out of "<<num_edges<<std::endl;
+							checkPointTime = getMilliCount();
+					}
+					color_bv value;
+					deserialize_color_bv(colorfile, value);
+					curPos = cp->insertFixedLengthColorLabel(eqCls[value], curPos, fixedLength);
+				}
+			}
 			//std::cerr << "\n" << getMilliSpan(packStartTime) << " ms : Packing label & rank into bitvector." << std::endl;
 	}
 	else {
@@ -252,7 +299,7 @@ int main(int argc, char * argv[])
 		colorfile.seekg(0, colorfile.beg);
 //		cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(num_color*num_color, 2*num_edges*num_color);
 //		cp = new ColorPacker<RBVec, RBVec, RBVec>(num_color*num_color, 2*num_edges*num_color);
-		cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(num_color*num_color, 2*num_edges*num_color);
+		cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(num_color*num_color, 2*num_edges*num_color, dynamicLengthLbl);
 		for (size_t i=0; i < num_edges; i++) {
 				if (i % 100000000 == 0) {
 						std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<" out of "<<num_edges<<std::endl;
@@ -288,8 +335,8 @@ int main(int argc, char * argv[])
 
 
 	//checkPointTime = getMilliCount();
-	cp->storeAll(res_dir, curPos, eqClsVec.size()*num_color);
+	cp->storeAll(res_dir, curPos, eqClsVec.size()*num_color, dynamicLengthLbl);
 	//std::cerr << getMilliSpan(checkPointTime) << " ms : Storing all three bitvectors." << std::endl << std::endl;
-	serialize_info(num_color, num_edges, eqClsVec.size(), "uncompressed", "compressed", "compressed", res_dir);
+	serialize_info(num_color, num_edges, eqClsVec.size(), "uncompressed", "compressed", "compressed", res_dir, dynamicLengthLbl);
 	std::cerr << getMilliSpan(startTime)/1000.0 << " s : Total Time." << std::endl;
 }

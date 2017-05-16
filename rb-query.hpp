@@ -21,9 +21,11 @@ class ColorDetector {
 	uint64_t prevEdge_;
 	uint64_t prevColor_;
 	uint64_t* prevColorVal_;
+	bool isDynamicLblLength_;
+	uint64_t lblFixedLength_;
 	bool prevContains_(unsigned int color);
   public:
-	ColorDetector(std::string dir, uint64_t colorCnt); // todo: we should keep count of colors or k-mers in top of the file
+	ColorDetector(std::string dir, uint64_t colorCnt, bool isLblDynamicLength, uint64_t lblFixedLength); 
 	bool contains(unsigned int color, uint64_t edge);
 	uint64_t getColorCnt();
 	void printStatistics();

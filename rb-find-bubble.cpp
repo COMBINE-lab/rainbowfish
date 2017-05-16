@@ -59,7 +59,7 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   params.res_dir		 = res_dir_arg.getValue();
   params.bvs_type         = bitvectors_type_arg.getValue();
 }
-void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res_dir) {
+void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res_dir, bool& isDynamicLblLength, uint64_t& lblFixedLength) {
 	
 	std::string jsonFileName = res_dir + "/info.json";
 	std::ifstream jsonFile(jsonFileName);
@@ -67,6 +67,8 @@ void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res
 		cereal::JSONInputArchive archive(jsonFile);
 		archive(cereal::make_nvp("num_colors", num_colors));
 		archive(cereal::make_nvp("num_edges", num_edges));
+		archive(cereal::make_nvp("is_label_dynamic", isDynamicLblLength));
+		archive(cereal::make_nvp("label_fixed_length", lblFixedLength));
 	}
 	jsonFile.close();
 }
@@ -235,13 +237,17 @@ class MainTemplatized : public MainBase {
   cerr << "loading colors" << std::endl;
   uint64_t num_colors = 0;
   uint64_t num_edges = 0;
-  deserialize_info(num_colors, num_edges, p.res_dir);
+  bool isDynamicLblLength = true;
+  uint64_t lblFixedLength = 0;
+  deserialize_info(num_colors, num_edges, p.res_dir, isDynamicLblLength, lblFixedLength);
   cerr << "k             : " << dbg.k << endl;
   cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
   cerr << "num_edges()   : " << dbg.num_edges() << " or " << num_edges << endl;
   cerr << "num colors    : " << num_colors << endl;
   cerr << "Total size    : " << size_in_mega_bytes(dbg) << " MB" << endl;
   cerr << "Bits per edge : " << bits_per_element(dbg) << " Bits" << endl;
+  cerr << "Is Label Length Dynamic? : " << isDynamicLblLength << endl;
+  cerr << "Label Fixed Length : " << lblFixedLength << endl;
 
   //dump_nodes(dbg, colors);
   //dump_edges(dbg, colors);
@@ -251,7 +257,7 @@ class MainTemplatized : public MainBase {
   uint64_t startTime = getMilliCount();
   //uint64_t checkPointTime = getMilliCount();
   std::string res_dir = p.res_dir;
-  ColorDetector<T1, T2, T3> cd(res_dir, num_colors);
+  ColorDetector<T1, T2, T3> cd(res_dir, num_colors, isDynamicLblLength, lblFixedLength);
   //sd_vector<> colors;
   //load_from_file(colors, p.color_filename);
   find_bubbles(dbg, cd,/*colors,*/ mask1, mask2);
