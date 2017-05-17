@@ -20,8 +20,12 @@ How to install:
 2. git clone sparsepp into 3rd_party_inst/include
 4. `make` (in cosmo directory)
 5. git clone rainbowfish *inside the main cosmo directory*.
-6. cd into the rainbowfish sub-directory and `make`.
-
+6. cd into the rainbowfish sub-directory:
+	- `>mkdir build`
+	- `>cd build`
+	- `>cmake ..`
+	- `>make`
+	
 How to run:
 1. Run all the first four steps in VARI, building KMC2 files and sorting kmers. 
 After that building color matrix using command "cosmo-build"
