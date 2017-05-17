@@ -27,7 +27,6 @@ set(KMC_PATH "${COSMO_PATH}/3rd_party_src/KMC")
 include_directories(${KMC_PATH}
 		    ${DEP_PATH}/include 
 		    ${BOOST_PATH}/include 
-		    ${PROJECT_SOURCE_DIR}/Sux 
 		    ${COSMO_PATH} 
 		    ${PROJECT_SOURCE_DIR}/include
 		    )
@@ -36,19 +35,22 @@ link_directories(${DEP_PATH}/lib
        		 ${PROJECT_SOURCE_DIR}
 		 ${BOOST_PATH}/lib)
 
-file(GLOB SUX_SRC ${PROJECT_SOURCE_DIR}/Sux/*.cpp)
-message(STATUS ${SUX_SRC})
-add_library(sux STATIC ${SUX_SRC})
-add_library(rainbowfish STATIC rb-vec.cpp bit_array.c rb-filesystem.cpp rb-query.cpp)
+	 #file(GLOB SUX_SRC ${PROJECT_SOURCE_DIR}/Sux/*.cpp)
+	 #message(STATUS ${SUX_SRC})
+	 #add_library(sux STATIC ${SUX_SRC})
+add_library(rainbowfish STATIC rb-vec.cpp rb-filesystem.cpp rb-query.cpp)
 
 add_executable(rb-pack-color rb-pack-color.cpp)
-target_link_libraries(rb-pack-color rainbowfish sux boost_system boost_filesystem sdsl)
+target_link_libraries(rb-pack-color rainbowfish boost_system boost_filesystem sdsl)
 
 add_executable(rb-find-bubble rb-find-bubble.cpp)
-target_link_libraries(rb-find-bubble rainbowfish sux boost_system boost_filesystem sdsl)
+target_link_libraries(rb-find-bubble rainbowfish boost_system boost_filesystem sdsl)
 
 add_executable(rb-validate rb-validate.cpp)
-target_link_libraries(rb-validate rainbowfish sux boost_system boost_filesystem sdsl)
+target_link_libraries(rb-validate rainbowfish boost_system boost_filesystem sdsl)
+
+#add_executable(test-select test_select.cpp)
+#target_link_libraries(test-select rainbowfish sux sdsl)
 
 
 #RB_VEC_SRC=rb-vec.cpp rb-vec.hpp bit_array.c $(RANK9SEL_SRC)

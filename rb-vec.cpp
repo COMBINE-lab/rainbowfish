@@ -1,18 +1,21 @@
 #include "rb-vec.hpp"
-#include "bit_array.h"
 
 RBVec::RBVec(std::string fileName, bool hasSelect) {
 		hasSelect_ = hasSelect;
 		sdsl::load_from_file(bitvec_, fileName+VEC_EXT);
-		if (hasSelect)
-			selbitvec_ = new rank9sel(bitvec_.data(), bitvec_.size());
+		if (hasSelect) {
+			//selbitvec_ = new rank9sel(bitvec_.data(), bitvec_.size());
+			selbitvec_ = sdsl::bit_vector::select_1_type(&bitvec_);
+    }
 		bvsize_ = bitvec_.size();
 	  	std::cerr << fileName+VEC_EXT << " -- size " << bitvec_.size() <<std::endl;
 }
 
+/*
 RBVec::~RBVec() {
 		if (selbitvec_) { delete selbitvec_; }
 }
+*/
 
 RBVec::RBVec(uint64_t bitSize) {
 		hasSelect_ = false;
@@ -24,7 +27,7 @@ RBVec& RBVec::operator=(const RBVec& other) {
 		hasSelect_ = other.hasSelect_;
 		bitvec_ = other.bitvec_;
 		if (hasSelect_) { 
-				selbitvec_ = new rank9sel(bitvec_.data(), bitvec_.size()); 
+      selbitvec_ = sdsl::bit_vector::select_1_type(&bitvec_);
 		}
 		bvsize_ = other.bvsize_;		
 		std::cerr << "Ran RBVec operator=\n";
@@ -46,7 +49,8 @@ void RBVec::set(uint64_t idx) {
 uint64_t RBVec::select(uint64_t rnk) {
 	//no +1 for rank9sel but +1 for rankselect
 	//return (rnk < 28273951) ? selbitvec_->select(rnk+1) : bitvec_.size() - 1;
-	return selbitvec_->select(rnk); 
+	//return selbitvec_->select(rnk); 
+  return selbitvec_(rnk+1);
 }
 
 //todo implement it for BitPoppy
@@ -66,51 +70,6 @@ bool RBVec::serialize(std::string fileName, uint64_t finalSize) {
 	std::cerr << fileName << " -- size " << bitvec_.size() <<std::endl;
 	return sdsl::store_to_file(bitvec_, fileName);
 }
-
-/*
-boost::dynamic_bitset<> RBVec::readBitset(std::string infileName){
-  std::ifstream infile(infileName, std::ios::binary);
-  size_t bs_size;
-  infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
-  boost::dynamic_bitset<> bs(bs_size);
-  size_t bytes_len = (size_t)ceil(bs_size/8.0);
-  std::cerr << infileName << " -- size " << bs_size <<std::endl;
-  unsigned char* bytes = new unsigned char[bytes_len];
- // for (uint64_t i=0; i<bytes_len;i++) bytes[i]=0;
-  std::memset(bytes, 0, bytes_len);
-  infile.read(reinterpret_cast<char*>(bytes), bytes_len);
-  size_t ctr = 0;
-  for (size_t bytectr=0; bytectr < bytes_len; ++bytectr) {
-    for (int i = 7; i >= 0; --i) {
-      bs[ctr] = (bytes[bytectr] >> i) & 1;
-      ctr++;
-      if(ctr == bs_size) {bytectr = bytes_len;break;}
-    }
-  }
-  infile.close(); 
-  return bs;
-}
-
-rank9sel* RBVec::readRSBitset(std::string infileName) {
-	std::ifstream infile(infileName, std::ios::in|std::ios::binary);
-  	size_t bs_size;
-	infile.read(reinterpret_cast<char*>(&bs_size), sizeof(bs_size));
-	size_t byteCnt = ceil(bs_size/8.0);
-    std::cerr << infileName << " -- size  " << bs_size <<std::endl;
-    BIT_ARRAY* ba = bit_array_create(bs_size);
-	for (size_t i = 0; i < byteCnt; ++i) {
-		char b;
-		infile.read(&b, sizeof(b));
-		for (size_t j = 0; j < 8; ++j) {
-			if ((b >> (7-j)) & 1) bit_array_set(ba, i * 8 + j); 
-		}
-	}
-	infile.close();
-	rank9sel* bitmap = new rank9sel(ba->words, ba->num_of_bits);
-	return bitmap;
-}
-*/
-
 
 /* Compressed bitvector */
 

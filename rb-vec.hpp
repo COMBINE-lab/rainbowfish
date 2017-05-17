@@ -8,7 +8,7 @@
 
 //#include "bitmap.h"
 //#include "shared.h"
-#include "rank9sel.h"
+//#include "rank9sel.h"
 #include <sdsl/bit_vectors.hpp>
 #include <sdsl/select_support.hpp>
 
@@ -21,11 +21,11 @@ class RBVec {
 	private:
 			bool hasSelect_;
 			sdsl::bit_vector bitvec_;
-			rank9sel* selbitvec_{nullptr};
+      sdsl::bit_vector::select_1_type selbitvec_;
 			size_t bvsize_;
 	public:
 			RBVec(){}
-			~RBVec();
+  //~RBVec();
 			RBVec(std::string fileName, bool hasSelect);
 			RBVec(uint64_t bitSize);
 			RBVec& operator=(const RBVec& other);
@@ -35,7 +35,6 @@ class RBVec {
 			uint64_t getInt(uint64_t offset, uint64_t bitLen);
 			bool setInt(uint64_t offset, uint64_t num, uint8_t bitlen);
 			bool serialize(std::string fileName, uint64_t finalSize);
-			//uint64_t getNextOne(uint64_t offset);
 };
 
 class RBVecCompressed {
@@ -57,8 +56,6 @@ class RBVecCompressed {
 			uint64_t getInt(uint64_t offset, uint64_t bitLen);
 			bool setInt(uint64_t offset, uint64_t num, uint8_t bitlen);
 			bool serialize(std::string fileName, uint64_t finalSize);
-			//uint64_t getNextOne(uint64_t offset);
-
 };
 
 #endif

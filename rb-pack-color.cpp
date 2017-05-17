@@ -179,12 +179,14 @@ int main(int argc, char * argv[])
 	std::cerr<<"Num Colors: "<<num_color<<"\n";
 	int checkPointTime = getMilliCount();
 	int allocationTime = getMilliCount();
+
+  using CPType = ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>;
 	//FIRST ROUND going over all edges
 	// Read file and fill out equivalence classes
     //std::cerr << "edges: " << num_edges << " colors: " << num_color << " Total: " << num_edges * num_color << std::endl;
 //	ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed> * cp;
 //	ColorPacker<RBVec, RBVec, RBVec> * cp;
-	ColorPacker<RBVec, RBVecCompressed, RBVecCompressed> * cp;
+	CPType * cp;
     std::vector<std::pair<color_bv, uint64_t>> eqClsVec;
 	uint64_t curPos = 0;
 	if (sort) {
@@ -244,7 +246,8 @@ int main(int argc, char * argv[])
 
 		//			cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
 		//			cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
-					cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits, dynamicLengthLbl);
+        cp = new CPType(eqCls.size()*num_color, vecBits, dynamicLengthLbl);
+        //cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits, dynamicLengthLbl);
 
 
 					// SECOND ROUND going over all edges
@@ -271,7 +274,8 @@ int main(int argc, char * argv[])
 
 	//			cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, vecBits);
 	//			cp = new ColorPacker<RBVec, RBVec, RBVec>(eqCls.size()*num_color, vecBits);
-				cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, labelBitsetLength, dynamicLengthLbl);
+				cp = new CPType(eqCls.size()*num_color, labelBitsetLength, dynamicLengthLbl);
+				//cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(eqCls.size()*num_color, labelBitsetLength, dynamicLengthLbl);
 
 
 				// SECOND ROUND going over all edges
@@ -299,7 +303,8 @@ int main(int argc, char * argv[])
 		colorfile.seekg(0, colorfile.beg);
 //		cp = new ColorPacker<RBVecCompressed, RBVecCompressed, RBVecCompressed>(num_color*num_color, 2*num_edges*num_color);
 //		cp = new ColorPacker<RBVec, RBVec, RBVec>(num_color*num_color, 2*num_edges*num_color);
-		cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(num_color*num_color, 2*num_edges*num_color, dynamicLengthLbl);
+		//cp = new ColorPacker<RBVec, RBVecCompressed, RBVecCompressed>(num_color*num_color, 2*num_edges*num_color, dynamicLengthLbl);
+		cp = new CPType(num_color*num_color, 2*num_edges*num_color, dynamicLengthLbl);
 		for (size_t i=0; i < num_edges; i++) {
 				if (i % 100000000 == 0) {
 						std::cerr<<getMilliSpan(checkPointTime) << " ms : "<<i<<" out of "<<num_edges<<std::endl;
