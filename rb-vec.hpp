@@ -12,6 +12,8 @@
 #include <sdsl/bit_vectors.hpp>
 #include <sdsl/select_support.hpp>
 
+#define LOG2(X) ((unsigned) (8*sizeof (unsigned long long) - __builtin_clzll((X)) - 1))
+
 #define VEC_EXT ".bitvec"
 #define COMPRESSEDVEC_EXT ".rrr"
 
@@ -22,8 +24,11 @@ class RBVec {
 			rank9sel* selbitvec_{nullptr};
 			size_t bvsize_;
 	public:
+			RBVec(){}
+			~RBVec();
 			RBVec(std::string fileName, bool hasSelect);
 			RBVec(uint64_t bitSize);
+			RBVec& operator=(const RBVec& other);
 			bool operator[](uint64_t idx) const;
 			void set(uint64_t idx);
 			uint64_t select(uint64_t rnk);
@@ -42,8 +47,10 @@ class RBVecCompressed {
 			compressed_vec rrr_bitvec_;
 			decltype(rrr_bitvec_)::select_1_type selbitvec_;
 	public:
+			RBVecCompressed(){}
 			RBVecCompressed(std::string fileName, bool hasSelect);
 			RBVecCompressed(uint64_t bitSize);
+			RBVecCompressed& operator=(const RBVecCompressed& other);
 			bool operator[](uint64_t idx) const;
 			void set(uint64_t idx);
 			uint64_t select(uint64_t rnk);

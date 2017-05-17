@@ -60,7 +60,7 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   params.validation_type = validation_type_arg.getValue();
 }
 
-void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res_dir) {
+void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res_dir, bool& isDynamicLblLength, uint64_t& lblFixedLength ) {
 
 	std::string jsonFileName = res_dir + "/info.json";
 	std::ifstream jsonFile(jsonFileName);
@@ -68,6 +68,8 @@ void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res
 		cereal::JSONInputArchive archive(jsonFile);
 		archive(cereal::make_nvp("num_colors", num_colors));
 		archive(cereal::make_nvp("num_edges", num_edges));
+		archive(cereal::make_nvp("is_label_dynamic", isDynamicLblLength));
+		archive(cereal::make_nvp("label_fixed_length", lblFixedLength));
 	}
 	jsonFile.close();
 }
@@ -96,16 +98,20 @@ class MainTemplatized : public MainBase {
 					load_from_file(colors, p.color_filename);
 					uint64_t num_colors = 0;
 					uint64_t num_edges = 0;
-					deserialize_info(num_colors, num_edges, p.res_dir);
+					bool isDynamicLblLength = true;
+					uint64_t lblFixedLength = 0;
+					deserialize_info(num_colors, num_edges, p.res_dir, isDynamicLblLength, lblFixedLength);
 					cerr << "k             : " << dbg.k << endl;
 					cerr << "num_nodes()   : " << dbg.num_nodes() << endl;
 					cerr << "num_edges()   : " << dbg.num_edges() << " or " << num_edges <<  endl;
 					cerr << "colors        : " << colors.size() / dbg.size() << " or " << num_colors << endl; 
 					cerr << "Total size    : " << size_in_mega_bytes(dbg) << " MB" << endl;
 					cerr << "Bits per edge : " << bits_per_element(dbg) << " Bits" << endl;
+					cerr << "Is Label Length Dynamic? : " << isDynamicLblLength << endl;
+					cerr << "Label Fixed Length : " << lblFixedLength << endl;
 
 				  std::string res_dir = p.res_dir;
-				  ColorDetector<T1, T2, T3> cd(res_dir, num_colors);
+				  ColorDetector<T1, T2, T3> cd(res_dir, num_colors, isDynamicLblLength, lblFixedLength);
 				  uint64_t checkPointTime = getMilliCount();
 				
 				  if (p.validation_type == "compare") {
@@ -115,8 +121,7 @@ class MainTemplatized : public MainBase {
 				  	bool allTheSame = true;
 					for (uint64_t edge = 0; edge < num_edges; edge++) {
 					   bool first = true;
-					   for (size_t c = 0; c < num_colors; c++) {			 			   
-
+					   for (size_t c = 0; c < num_colors; c++) {						 
 							 short rb = cd.contains(c, edge);
 							 short cosmo = colors[edge*num_colors+c];
 							 rbsum += rb;
