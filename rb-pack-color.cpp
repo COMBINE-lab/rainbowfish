@@ -58,7 +58,7 @@ std::string file_extension = ".<extension>";
 
 void parse_arguments(int argc, char **argv, parameters_t & params)
 {
-    TCLAP::CmdLine cmd("Cosmo Copyright (c) Alex Bowe (alexbowe.com) 2014", ' ', VERSION);
+    TCLAP::CmdLine cmd("Cosmo Copyright (c) Alex Bowe (alexbowe.com) 2014", ' ', "0.7.0");
     TCLAP::UnlabeledValueArg<std::string> input_filename_arg("input",
                                                              "Input file. Currently only supports DSK's binary format (for k<=64).", true, "", "input_file", cmd);
     TCLAP::UnlabeledValueArg<std::string> num_colors_arg("num_colors",

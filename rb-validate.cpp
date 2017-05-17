@@ -45,7 +45,7 @@ int getMilliSpan(int nTimeStart){
 
 void parse_arguments(int argc, char **argv, parameters_t & params)
 {
-  TCLAP::CmdLine cmd(BANNER, ' ', VERSION);
+  TCLAP::CmdLine cmd("Rainbowfish validate", ' ', "0.1.0");
   TCLAP::UnlabeledValueArg<std::string> input_filename_arg("input", ".dbg file.", true, "", "graph_file", cmd);
   TCLAP::UnlabeledValueArg<std::string> color_filename_arg("color", ".rrr file.", true, "", "color_file", cmd);
     TCLAP::UnlabeledValueArg<std::string> res_dir_arg("dir", "Result directory. Should have created the directory first.", true, "", "res_dir", cmd);
