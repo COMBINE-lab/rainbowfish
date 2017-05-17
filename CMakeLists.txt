@@ -14,6 +14,8 @@ set(RBF_CPP_FLAGS "${RBF_CPP_FLAGS} -DVERSION=\"${VSTRING}\" -DBANNER=\"${BSTRIN
 set(OPT_FLAGS "-O3 -mmmx -msse -msse2 -msse3 -msse4 -msse4.2 -march=native -fno-strict-aliasing")
 set(DEBUG_FLAGS "-pg -g -gstabs")
 
+set(RBF_CPP_FLAGS "${RBF_CPP_FLAGS} ${OPT_FLAGS}")
+
 set(CMAKE_CXX_FLAGS ${RBF_CPP_FLAGS})
 
 #CLANG_WARNINGS=-Wbool-conversions -Wshift-overflow -Wliteral-conversion # CLANG ONLY
