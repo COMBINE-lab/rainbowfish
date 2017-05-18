@@ -38,7 +38,7 @@ link_directories(${DEP_PATH}/lib
 	 #file(GLOB SUX_SRC ${PROJECT_SOURCE_DIR}/Sux/*.cpp)
 	 #message(STATUS ${SUX_SRC})
 	 #add_library(sux STATIC ${SUX_SRC})
-add_library(rainbowfish STATIC rb-vec.cpp rb-filesystem.cpp rb-query.cpp)
+add_library(rainbowfish STATIC rb-vec.cpp rb-filesystem.cpp rb-query.cpp xxhash.c)
 
 add_executable(rb-pack-color rb-pack-color.cpp)
 target_link_libraries(rb-pack-color rainbowfish boost_system boost_filesystem sdsl)
