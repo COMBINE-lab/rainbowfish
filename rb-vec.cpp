@@ -55,7 +55,7 @@ uint64_t RBVec::select(uint64_t rnk) {
 
 //todo implement it for BitPoppy
 uint64_t RBVec::getInt(uint64_t offset, uint64_t bitLen) {
-	return bitvec_.get_int(offset, static_cast<uint8_t>(bitLen));
+	return bitvec_.get_int(offset, static_cast<uint8_t>(bvsize_-offset>bitLen?bitLen:bvsize_-offset));
 }
 
 bool RBVec::setInt(uint64_t offset, uint64_t num, uint8_t bitlen) {
@@ -126,7 +126,7 @@ uint64_t RBVecCompressed::select(uint64_t rnk) {
 
 // gets int value from rrr_vector
 uint64_t RBVecCompressed::getInt(uint64_t offset, uint64_t bitLen) {
-	return rrr_bitvec_.get_int(offset, bitLen);
+	return rrr_bitvec_.get_int(offset, bvsize_-offset>bitLen?bitLen:bvsize_-offset);
 }
 
 bool RBVecCompressed::setInt(uint64_t offset, uint64_t num, uint8_t bitlen) {

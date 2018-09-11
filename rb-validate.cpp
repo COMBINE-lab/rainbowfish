@@ -49,15 +49,35 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   TCLAP::UnlabeledValueArg<std::string> input_filename_arg("input", ".dbg file.", true, "", "graph_file", cmd);
   TCLAP::UnlabeledValueArg<std::string> color_filename_arg("color", ".rrr file.", true, "", "color_file", cmd);
     TCLAP::UnlabeledValueArg<std::string> res_dir_arg("dir", "Result directory. Should have created the directory first.", true, "", "res_dir", cmd);
-    TCLAP::UnlabeledValueArg<std::string> bitvectors_type_arg("bv_type","format is like ccc, uuu, ucc, .. c=compressed, u=uncompressed. order = label, rank, eqTable", true, "", "bv_type", cmd);	
+    //TCLAP::UnlabeledValueArg<std::string> bitvectors_type_arg("bv_type","format is like ccc, uuu, ucc, .. c=compressed, u=uncompressed. order = label, rank, eqTable", true, "", "bv_type", cmd);	
     TCLAP::UnlabeledValueArg<std::string> validation_type_arg("validation_type","Validation Type: Accepted values:compare, query, random-query, cosmo-query", true, "", "validation_type", cmd);
   cmd.parse( argc, argv );
 
   params.input_filename  = input_filename_arg.getValue();
   params.color_filename  = color_filename_arg.getValue();
   params.res_dir		 = res_dir_arg.getValue();
-  params.bvs_type = bitvectors_type_arg.getValue();
+  //params.bvs_type = bitvectors_type_arg.getValue();
   params.validation_type = validation_type_arg.getValue();
+
+	std::string l,s,eq;
+	std::string jsonFileName = params.res_dir + "/info.json";                                    
+    std::ifstream jsonFile(jsonFileName);                                                 
+    {
+        cereal::JSONInputArchive archive(jsonFile);
+        archive(cereal::make_nvp("label_type", l));                              
+        archive(cereal::make_nvp("select_type", s));             
+        archive(cereal::make_nvp("eqtable_type", eq));                
+    }
+    jsonFile.close();
+	params.bvs_type = "";
+	if (l == "compressed") params.bvs_type += "c";
+	else params.bvs_type += "u";
+	if (s == "compressed") params.bvs_type += "c";
+	else params.bvs_type += "u";
+	if (eq == "compressed") params.bvs_type += "c";
+	else params.bvs_type += "u";
+	
+	std::cerr << "bvs type: " << params.bvs_type << "\n";
 }
 
 void deserialize_info(uint64_t& num_colors, uint64_t& num_edges, std::string res_dir, bool& isDynamicLblLength, uint64_t& lblFixedLength ) {

@@ -48,9 +48,9 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	uint64_t colorIdx = 0;
 	if (isDynamicLblLength_) {
 			uint64_t start = b.select(edge);
-			//if (start > 83381100)
-			//std::cerr<<edge<<" : "<<start<<"\n";				
+			//if (edge == 28273938) std::cerr << "select start: " << start << "\n";
 			uint64_t next = b.getInt(start, 64);
+			//if (edge == 28273938) std::cerr << next << "\n";
 			if (!(next & 0x0000000000000001)) {
 				std::cerr << "lowest bit should always be set!\n";
 			}
@@ -73,6 +73,7 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 			*/
 			/** Alternative bitscan forward **/
 
+
 			colorIdx = A.getInt(start, end-start);
 			colorIdx = colorIdx + ((1<<(end-start))-2);
 	}
@@ -83,6 +84,8 @@ bool ColorDetector<T1, T2, T3>::contains(unsigned int color, uint64_t edge) {
 	prevEdge_ = edge;
 	prevColor_ = colorIdx;
 	//st = getMilliCountt();
+	
+	//if (edge == 28273938) std::cerr << "color size: " << colorCnt_*colorIdx+color << "\n";
 	bool res = eqT[colorCnt_*colorIdx+color];
 	/*for (uint64_t c=0, cntr=0; c<colorCnt_; c+=64,cntr++) {
 		prevColorVal_[cntr] = eqT.getInt(colorCnt_*colorIdx+c, std::min((int)(colorCnt_-c), 64));

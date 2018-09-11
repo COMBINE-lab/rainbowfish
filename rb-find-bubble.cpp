@@ -40,7 +40,7 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
 {
   TCLAP::CmdLine cmd("Rainbowfish", ' ', "0.1.0");
   TCLAP::UnlabeledValueArg<std::string> input_filename_arg("input", ".dbg file.", true, "", "graph_file", cmd);
-  TCLAP::UnlabeledValueArg<std::string> color_filename_arg("color", ".rrr file.", true, "", "color_file", cmd);
+//  TCLAP::UnlabeledValueArg<std::string> color_filename_arg("color", ".rrr file.", true, "", "color_file", cmd);
   string color_mask1 = "color_mask1";
   TCLAP::ValueArg<std::string> color_mask1_arg("a", "color_mask1",
 	    "Color mask 1, color1 [" + color_mask1 + "]", false, "", color_mask1, cmd);
@@ -53,7 +53,7 @@ void parse_arguments(int argc, char **argv, parameters_t & params)
   cmd.parse( argc, argv );
 
   params.input_filename  = input_filename_arg.getValue();
-  params.color_filename  = color_filename_arg.getValue();
+  //params.color_filename  = color_filename_arg.getValue();
   params.color_mask1     = color_mask1_arg.getValue();
   params.color_mask2     = color_mask2_arg.getValue();
   params.res_dir		 = res_dir_arg.getValue();
