@@ -53,5 +53,8 @@ validation-type should be one of the following words :
 4. find bubbles:
 
 ```
-> rb-find-bubble kmc2_list_1000.dbg kmc2_list_1000.colors.sd_vector \<Address to bitvector dir\> > rb-bubbles
+> rb-find-bubble  -a 1 -b 2 ecoli6_63kmc2_list.dbg ecoli6_63kmc2_list.colors.sd_vector \<Address to bitvector dir\> \<type of the bitvector (uuu/uuc/ucc/ccc)\> > rb-bubbles
 ```
+
+type of compression shows for each of the three bitvectors (label, boundary, and equivalence table) if the bitvector is compressed (c) or uncompressed (u), so for example ucc means label bitvector is uncompressed, boundary is compressed, and equivalence table bitvector is also compressed. 
+As in paper, we use ucc.

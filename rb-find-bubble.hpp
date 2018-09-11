@@ -1,4 +1,4 @@
-#ifndef RBBUBBKE_COLOR_H
+#ifndef RBBUBBLE_COLOR_H
 #define RBBUBBLE_COLOR_H
 
 struct parameters_t {
